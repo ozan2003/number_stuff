@@ -71,10 +71,7 @@ pub fn is_prime(num: &Integer) -> bool
     {
         | Some(n) if n <= 1 => return false,
         | Some(n) if n <= 3 => return true,
-        | None =>
-        {}
-        | _ =>
-        {}
+        | _ => {}
     }
 
     if num.is_even()
