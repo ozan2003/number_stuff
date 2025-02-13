@@ -1,5 +1,3 @@
-#![allow(unused_imports)]
-use bit_vec::BitVec;
 use rug::rand::RandState;
 use rug::{Complete, Integer};
 
@@ -68,13 +66,15 @@ pub fn is_prime(num: &Integer) -> bool
      * If n is composite, at least 75% of bases a will reveal n is composite.
      * Thus, after k iterations, the probability of `n` being prime is 1/4^k.
      */
-    if *num < 2
+    // Early returns for small numbers
+    match num.to_i32()
     {
-        return false;
-    }
-    else if *num == 2 || *num == 3
-    {
-        return true;
+        | Some(n) if n <= 1 => return false,
+        | Some(n) if n <= 3 => return true,
+        | None =>
+        {}
+        | _ =>
+        {}
     }
 
     if num.is_even()
