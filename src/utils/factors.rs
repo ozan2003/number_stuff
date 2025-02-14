@@ -220,6 +220,9 @@ pub fn divisor_num(n: i64) -> u32
 ///
 /// * Returns 0 for input 0
 /// * Returns 1 for input 1
+/// 
+/// # Panics
+/// Panics if the calculation results in overflow.
 #[must_use]
 pub fn totient(n: i64) -> i64
 {
