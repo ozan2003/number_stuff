@@ -23,11 +23,11 @@ fn main()
 
     if is_prime
     {
-        println!("{} is prime", num);
+        println!("{num} is prime");
     }
     else
     {
-        println!("{} is not prime", num);
+        println!("{num} is not prime");
     }
 
     println!("Took: {:?}", elapsed);

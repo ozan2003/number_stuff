@@ -24,9 +24,9 @@ fn main()
 
     let primes = Primes::new(n);
 
-    println!("Primes up to {}:", n);
+    println!("Primes up to {n}:");
     for p in primes.iter()
     {
-        println!("{}", p);
+        println!("{p}");
     }
 }

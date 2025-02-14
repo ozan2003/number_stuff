@@ -20,6 +20,6 @@ fn main()
     let totient = totient(num);
     let elapsed = t0.elapsed();
 
-    println!("f({}) = {}", num, totient);
-    println!("Took: {:?}", elapsed);
+    println!("f({num}) = {totient}");
+    println!("Took: {elapsed:?}");
 }

@@ -46,6 +46,6 @@ where
     let factors = factor_func(&num);
     let elapsed = t0.elapsed();
 
-    println!("Factors of {:?}: {:?}", num, factors);
-    println!("Took: {:?}", elapsed);
+    println!("Factors of {num:?}: {factors:?}");
+    println!("Took: {elapsed:?}");
 }
