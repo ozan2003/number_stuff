@@ -62,6 +62,17 @@ pub fn trial_division(mut n: i64) -> BTreeMap<i64, u32>
     factors
 }
 
+/// Find the number of trailing zeros in a number in its binary representation.
+fn trailing_zeros(num: &Integer) -> u32
+{
+    // (num & -num).trailing_zeros() in Rust.
+    // f64's mantissa is 53 bits long.
+    Float::with_val(53, num & (-num.clone()))
+        .log2()
+        .to_u32_saturating()
+        .expect("float too big for u32")
+}
+
 /// Find the prime factors of a number using Pollard's rho algorithm
 /// repeatedly.
 ///
@@ -253,6 +264,21 @@ mod tests
         assert_eq!(totient(12), 4);
         assert_eq!(totient(36), 12);
         assert_eq!(totient(43), 42);
+    }
+
+    #[test]
+    fn test_trailing_zeros()
+    {
+        assert_eq!(trailing_zeros(&Integer::from(0)), 0);
+        assert_eq!(trailing_zeros(&Integer::from(1)), 0);
+        assert_eq!(trailing_zeros(&Integer::from(2)), 1);
+        assert_eq!(trailing_zeros(&Integer::from(4)), 2);
+        assert_eq!(trailing_zeros(&Integer::from(8)), 3);
+        assert_eq!(trailing_zeros(&Integer::from(16)), 4);
+        assert_eq!(trailing_zeros(&Integer::from(32)), 5);
+        assert_eq!(trailing_zeros(&Integer::from(48)), 4);
+        assert_eq!(trailing_zeros(&Integer::from(720)), 4);
+        assert_eq!(trailing_zeros(&Integer::from(1024)), 10);
     }
 
     #[test]
