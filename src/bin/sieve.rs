@@ -12,14 +12,11 @@ fn main()
         exit(1);
     }
 
-    let n = match args[1].parse()
+    let Ok(n) = args[1].parse()
+    else
     {
-        | Ok(n) => n,
-        | Err(_) =>
-        {
-            eprintln!("Invalid input: {}", args[1]);
-            exit(1);
-        }
+        eprintln!("Invalid input: {}", args[1]);
+        exit(1);
     };
 
     let primes = Primes::new(n);
