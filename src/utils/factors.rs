@@ -102,7 +102,8 @@ pub fn pollards_rho(num: &Integer) -> BTreeMap<Integer, u32>
     if num.is_negative()
     {
         factors.insert(Integer::NEG_ONE.clone(), 1);
-        num = -num;
+        //num = -num;
+        num.abs_mut();
     }
 
     // Add the counts of 2 if n is even.
@@ -146,7 +147,8 @@ pub fn pollards_rho(num: &Integer) -> BTreeMap<Integer, u32>
         x = f(&x);
         y = f(&f(&y));
 
-        d = (&x - &y).complete().gcd(&num);
+        let diff = &x - &y;
+        d = diff.complete().gcd(&num);
     }
 
     if d == num
@@ -233,7 +235,9 @@ pub fn totient(n: i64) -> i64
         .fold(n, |acc, (&prime, &_power)| {
             // Apply the formula: n * (1 - 1/p) for each prime factor.
             // 1 - 1/p = p-1/p
-            acc * (prime - 1) / prime
+            acc.checked_mul(prime - 1)
+                .and_then(|v| v.checked_div(prime))
+                .expect("Overflow in calculation.")
         })
 }
 
