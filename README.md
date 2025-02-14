@@ -5,7 +5,6 @@ This repo contains a collection of number theory utilities. The utilities are di
 1. Prime Numbers
     * Primality Testing
       * Miller-Rabin primality test
-      * Trial Division method
     * Euler's Totient Function
     * Prime Generation
       * Sieve of Atkin
