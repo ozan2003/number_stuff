@@ -23,7 +23,7 @@ fn main()
             .parse()
             .expect("Couldn't parse number.");
 
-        time_and_print(num, |n: &i64| trial_division(*n));
+        time_and_print(&num, |n: &i64| trial_division(*n));
     }
     else
     {
@@ -31,19 +31,19 @@ fn main()
             .parse()
             .expect("Couldn't parse number.");
         
-        time_and_print(num, pollards_rho);
+        time_and_print(&num, pollards_rho);
     }
 }
 
 /// Helper function to avoid code duplication.
-fn time_and_print<T, F>(num: T, factor_func: F)
+fn time_and_print<T, F>(num: &T, factor_func: F)
 where
     T: Mul<T> + std::fmt::Debug,
     <T as Mul<T>>::Output: Into<T>,
     F: FnOnce(&T) -> BTreeMap<T, u32>,
 {
     let t0 = Instant::now();
-    let factors = factor_func(&num);
+    let factors = factor_func(num);
     let elapsed = t0.elapsed();
 
     println!("Factors of {num:?}: {factors:?}");
