@@ -1,6 +1,7 @@
-use crate::utils::gcd;
 use crate::utils::primes::Primes;
-use rand::Rng;
+use rug::ops::Pow;
+use rug::rand::RandState;
+use rug::{Complete, Float, Integer};
 use std::collections::BTreeMap;
 
 /// Computes the prime factorization of a number.
@@ -88,26 +89,29 @@ fn trailing_zeros(num: &Integer) -> u32
 /// correct factors or may not factorize the number or some factors at all.
 #[allow(clippy::many_single_char_names)]
 #[must_use]
-pub fn pollards_rho(mut num: i64) -> BTreeMap<i64, u32>
+pub fn pollards_rho(num: &Integer) -> BTreeMap<Integer, u32>
 {
     let mut factors = BTreeMap::new();
+    let mut num = num.clone();
 
     if num == 0 || num == 1
     {
         return factors;
     }
 
-    if num < 0
+    if num.is_negative()
     {
-        factors.insert(-1, 1);
+        factors.insert(Integer::NEG_ONE.clone(), 1);
         num = -num;
     }
 
     // Add the counts of 2 if n is even.
-    if num % 2 == 0
+    if num.is_even()
     {
-        *factors.entry(2).or_insert(0) += num.trailing_zeros();
-        num >>= factors.get(&2).copied().unwrap_or_default(); // n /= 2^k
+        // Traliling zeros.
+        let zeros = trailing_zeros(&num);
+        *factors.entry(Integer::from(2)).or_insert(0) += zeros;
+        num >>= zeros; // n /= 2^k
 
         if num == 1
         {
@@ -115,22 +119,34 @@ pub fn pollards_rho(mut num: i64) -> BTreeMap<i64, u32>
         }
     }
 
-    let mut rng = rand::rng();
-    // Select an x_0 uniformly at random from [2, n - 1].
+    let mut rng = RandState::new();
+    // Select an x_0 uniformly at random from [2, n - 1] -> [0, n - 3].
     //
     // Floyd's cycle-finding algorithm.
     // x => x_i
     // y => x_i+1
-    let mut x = rng.random_range(2..num);
-    let mut y = x;
-    let mut d = 1;
-    let f = |z: i64| (z * z + 1) % num;
+    let mut x: Integer = {
+        let mut x = Integer::from(&num - 3).abs();
 
-    while d == 1
+        // random_below_mut panics if x is zero.
+        if x.is_zero()
+        {
+            x += 1;
+        }
+
+        x.random_below_mut(&mut rng);
+        x + 2
+    };
+    let mut y: Integer = x.clone();
+    let mut d: Integer = Integer::ONE.clone();
+    let f = |z: &Integer| (z.pow(2).complete() + 1) % &num;
+
+    while d == *Integer::ONE
     {
-        x = f(x);
-        y = f(f(y));
-        d = gcd((x - y).abs(), num);
+        x = f(&x);
+        y = f(&f(&y));
+
+        d = (&x - &y).complete().gcd(&num);
     }
 
     if d == num
@@ -140,12 +156,12 @@ pub fn pollards_rho(mut num: i64) -> BTreeMap<i64, u32>
     // Look for other factors.
     else
     {
-        for (factor, freq) in pollards_rho(d)
+        for (factor, freq) in pollards_rho(&d)
         {
             *factors.entry(factor).or_insert(0) += freq;
         }
 
-        for (factor, freq) in pollards_rho(num / d)
+        for (factor, freq) in pollards_rho(&(num / d))
         {
             *factors.entry(factor).or_insert(0) += freq;
         }
@@ -284,31 +300,31 @@ mod tests
     #[test]
     fn test_pollards_rho()
     {
-        let f = pollards_rho(0);
+        let f = pollards_rho(&Integer::from(0));
         assert_eq!(f.len(), 0);
 
-        let f = pollards_rho(1);
+        let f = pollards_rho(&Integer::from(1));
         assert_eq!(f.len(), 0);
 
-        let f = pollards_rho(12);
-        assert_eq!(f.get(&2), Some(&2));
-        assert_eq!(f.get(&3), Some(&1));
+        let f = pollards_rho(&Integer::from(12));
+        assert_eq!(f.get(&Integer::from(2)), Some(&2));
+        assert_eq!(f.get(&Integer::from(3)), Some(&1));
 
-        let f = pollards_rho(720);
-        assert_eq!(f.get(&2), Some(&4));
-        assert_eq!(f.get(&3), Some(&2));
-        assert_eq!(f.get(&5), Some(&1));
+        let f = pollards_rho(&Integer::from(720));
+        assert_eq!(f.get(&Integer::from(2)), Some(&4));
+        assert_eq!(f.get(&Integer::from(3)), Some(&2));
+        assert_eq!(f.get(&Integer::from(5)), Some(&1));
 
-        let f = pollards_rho(171);
-        assert_eq!(f.get(&3), Some(&2));
-        assert_eq!(f.get(&19), Some(&1));
+        let f = pollards_rho(&Integer::from(171));
+        assert_eq!(f.get(&Integer::from(3)), Some(&2));
+        assert_eq!(f.get(&Integer::from(19)), Some(&1));
     }
 
     #[test]
     #[should_panic]
     fn test_pollards_rho_not_working()
     {
-        let f = pollards_rho(25);
-        assert_eq!(f.get(&5), Some(&2));
+        let f = pollards_rho(&Integer::from(25));
+        assert_eq!(f.get(&Integer::from(5)), Some(&2));
     }
 }
