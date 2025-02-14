@@ -30,5 +30,5 @@ fn main()
         println!("{num} is not prime");
     }
 
-    println!("Took: {:?}", elapsed);
+    println!("Took: {elapsed:?}");
 }
