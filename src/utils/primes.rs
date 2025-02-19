@@ -26,26 +26,26 @@ fn determine_k(num: &Integer) -> u32
 /// Check if a number is prime using the Miller-Rabin primality test.
 /// Iteration number is determined heuristically based on the magnitude of
 /// `num`.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `num` - The number to check for primality.
-/// 
+///
 /// # Returns
-/// 
+///
 /// `true` if `num` is prime, `false` otherwise.
-/// 
+///
 /// # Examples
-/// 
+///
 /// ```
 /// use rug::Integer;
-/// 
+///
 /// let num = Integer::from(18014398509488327);
 /// assert!(is_prime(&num));
 /// ```
-/// 
+///
 /// # Panics
-/// 
+///
 /// Panics if the `pow_mod` operation fails.
 #[allow(clippy::many_single_char_names)]
 #[must_use]
@@ -163,16 +163,6 @@ pub fn is_prime(num: &Integer) -> bool
     true
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////
 /// A prime sieve.
 pub struct Primes
@@ -332,6 +322,56 @@ impl Primes
             .filter(|&(_i, b)| b)
             .map(|(i, _b)| i)
     }
+}
+
+/// Check if a number is prime using trial division.
+///
+/// # Arguments
+///
+/// * `num` - The number to check for primality.
+///
+/// # Returns
+///
+/// `true` if `num` is prime, `false` otherwise.
+///
+/// # Examples
+///
+/// ```
+/// assert!(trial_division(18014398509482147));
+/// assert!(!trial_division(18014398509482171));
+/// assert!(trial_division(18014398509482329));
+/// assert!(!trial_division(18014398509482357));
+/// ```
+///
+/// # Panics
+///
+/// The function may panic when initializing the sieve.
+#[must_use]
+pub fn trial_division(num: u64) -> bool
+{
+    if num < 2
+    {
+        return false;
+    }
+
+    if num % 2 == 0
+    {
+        return num == 2;
+    }
+
+    // Any number greater than 1 is divided by a prime number less than its square
+    // root.
+    for i in Primes::new(usize::try_from(num.isqrt()).expect("Failed to convert u64 to usize"))
+        .iter()
+        .map(|x| x as u64)
+    {
+        if num % i == 0
+        {
+            return false;
+        }
+    }
+
+    true
 }
 
 #[cfg(test)]
@@ -815,5 +855,23 @@ mod tests
         {
             assert_eq!(primes.nth(i), Some(prime));
         }
+    }
+
+    #[test]
+    fn test_trial_division()
+    {
+        let primes = [
+            2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83,
+            89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179,
+            181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271,
+            277, 281, 283, 293, 307, 311, 313, 317, 331, 337, 347, 349, 353, 359, 367, 373, 379,
+            383, 389, 397, 401, 409, 419, 421, 431, 433, 439, 443, 449, 457, 461, 463, 467, 479,
+            487, 491, 499, 503, 509, 521, 523, 541, 547, 557, 563, 569, 571, 577, 587, 593, 599,
+            601, 607, 613, 617, 619, 631, 641, 643, 647, 653, 659, 661, 673, 677, 683, 691, 701,
+            709, 719, 727, 733, 739, 743, 751, 757, 761, 769, 773, 787, 797, 809, 811, 821, 823,
+            827, 829, 839, 853, 857, 859, 863, 877, 881, 883, 887, 907, 911, 919, 929,
+        ];
+
+        primes.into_iter().all(trial_division);
     }
 }

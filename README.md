@@ -4,6 +4,7 @@ This repo contains a collection of number theory utilities. The utilities are di
 
 1. Prime Numbers
     * Primality Testing
+      * Trial Division method
       * Miller-Rabin primality test
     * Euler's Totient Function
     * Prime Generation
