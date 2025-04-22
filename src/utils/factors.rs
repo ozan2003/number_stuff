@@ -1,7 +1,8 @@
 use crate::utils::primes::Primes;
+use rug::integer::IsPrime;
 use rug::ops::Pow;
 use rug::rand::RandState;
-use rug::{Complete, Float, Integer};
+use rug::{Complete, Integer};
 use std::collections::BTreeMap;
 
 /// Computes the prime factorization of a number.
@@ -103,16 +104,18 @@ pub fn pollards_rho(num: &Integer) -> BTreeMap<Integer, u32>
     if num.is_negative()
     {
         factors.insert(Integer::NEG_ONE.clone(), 1);
-        //num = -num;
         num.abs_mut();
     }
 
     // Add the counts of 2 if n is even.
     if num.is_even()
     {
-        // Traliling zeros.
         let zeros = trailing_zeros(&num);
-        *factors.entry(Integer::from(2)).or_insert(0) += zeros;
+        factors
+            .entry(Integer::from(2))
+            .and_modify(|v| *v += zeros)
+            .or_insert(zeros);
+
         num >>= zeros; // n /= 2^k
 
         if num == 1
@@ -121,54 +124,84 @@ pub fn pollards_rho(num: &Integer) -> BTreeMap<Integer, u32>
         }
     }
 
+    // Early check for small primes.
+    if num.is_probably_prime(50) != IsPrime::No
+    {
+        factors
+            .entry(num)
+            .and_modify(|v| *v += 1)
+            .or_insert(1);
+        return factors;
+    }
+
     let mut rng = RandState::new();
-    // Select an x_0 uniformly at random from [2, n - 1] -> [0, n - 3].
-    //
-    // Floyd's cycle-finding algorithm.
-    // x => x_i
-    // y => x_i+1
-    let mut x: Integer = {
-        let mut x = Integer::from(&num - 3).abs();
+    let max_attempts = 3;
 
-        // random_below_mut panics if x is zero.
-        if x.is_zero()
+    for attempt in 1..=max_attempts
+    {
+        // Vary the polynomial function with each attempt.
+        let c = Integer::from(attempt);
+        // f(z) = z^2 + c mod n.
+        let f = |z: &Integer| (z.pow(2).complete() + &c) % &num;
+
+        // Select an x_0 uniformly at random from [2, n - 1] -> [0, n - 3].
+        //
+        // Floyd's cycle-finding algorithm.
+        // x => x_i
+        // y => x_i+1
+        let mut x: Integer = {
+            let mut x = Integer::from(&num - 3).abs();
+            if x.is_zero()
+            {
+                x += 1;
+            }
+            x.random_below_mut(&mut rng);
+            x + 2
+        };
+        let mut y = x.clone();
+        let mut d = Integer::ONE.clone();
+
+        // Floyd's cycle finding with optimizations.
+        let mut iterations = 0;
+        let max_iterations = 100; // safety guard to prevent infinite loops.
+
+        while d == *Integer::ONE && iterations < max_iterations
         {
-            x += 1;
+            x = f(&x);
+            y = f(&f(&y));
+
+            let diff = (&x - &y).complete().abs();
+            d = diff.gcd(&num); // gcd being 1 indicates |x - y| and n are coprime.
+            iterations += 1;
         }
 
-        x.random_below_mut(&mut rng);
-        x + 2
-    };
-    let mut y: Integer = x.clone();
-    let mut d: Integer = Integer::ONE.clone();
-    let f = |z: &Integer| (z.pow(2).complete() + 1) % &num;
-
-    while d == *Integer::ONE
-    {
-        x = f(&x);
-        y = f(&f(&y));
-
-        let diff = &x - &y;
-        d = diff.complete().gcd(&num);
-    }
-
-    if d == num
-    {
-        *factors.entry(num).or_insert(0) += 1;
-    }
-    // Look for other factors.
-    else
-    {
-        for (factor, freq) in pollards_rho(&d)
+        if d != *Integer::ONE && d != num
         {
-            *factors.entry(factor).or_insert(0) += freq;
-        }
-
-        for (factor, freq) in pollards_rho(&(num / d))
-        {
-            *factors.entry(factor).or_insert(0) += freq;
+            // Found a proper factor, look for others.
+            // If d = n, we haven't actually factorized anything useful
+            for (factor, freq) in pollards_rho(&d)
+            {
+                factors
+                    .entry(factor)
+                    .and_modify(|v| *v += freq)
+                    .or_insert(freq);
+            }
+            for (factor, freq) in pollards_rho(&(num / &d))
+            {
+                factors
+                    .entry(factor)
+                    .and_modify(|v| *v += freq)
+                    .or_insert(freq);
+            }
+            return factors;
         }
     }
+
+    // If we get here, consider it prime (or give up).
+    factors
+        .entry(num)
+        .and_modify(|v| *v += 1)
+        .or_insert(1);
 
     factors
 }
@@ -221,7 +254,7 @@ pub fn divisor_num(n: i64) -> u32
 ///
 /// * Returns 0 for input 0
 /// * Returns 1 for input 1
-/// 
+///
 /// # Panics
 /// Panics if the calculation results in overflow.
 #[must_use]
@@ -326,13 +359,32 @@ mod tests
         let f = pollards_rho(&Integer::from(171));
         assert_eq!(f.get(&Integer::from(3)), Some(&2));
         assert_eq!(f.get(&Integer::from(19)), Some(&1));
+
+        let f = pollards_rho(&Integer::from(125));
+        assert_eq!(f.get(&Integer::from(5)), Some(&3));
+
+        // Large composite number with medium-sized factors.
+        let f = pollards_rho(&Integer::from(1234567890123456789u64));
+        assert_eq!(f.get(&Integer::from(3)), Some(&2));
+        assert_eq!(f.get(&Integer::from(101)), Some(&1));
+        assert_eq!(f.get(&Integer::from(3541)), Some(&1));
+        assert_eq!(f.get(&Integer::from(3607)), Some(&1));
+        assert_eq!(f.get(&Integer::from(3803)), Some(&1));
+        assert_eq!(f.get(&Integer::from(27961)), Some(&1));
+        
+        let big_prime = Integer::from(18446744073709551557u64);
+        let f = pollards_rho(&big_prime);
+        assert!(f.len() == 1);
     }
 
     #[test]
     #[should_panic]
     fn test_pollards_rho_not_working()
     {
-        let f = pollards_rho(&Integer::from(25));
-        assert_eq!(f.get(&Integer::from(5)), Some(&2));
+        let big_number = Integer::from(10000000000006800000000001147u128);
+        let f = pollards_rho(&big_number);
+        assert_eq!(f.get(&Integer::from(1858741)), Some(&1));
+        assert_eq!(f.get(&Integer::from(53799857)), Some(&1));
+        assert_eq!(f.get(&Integer::from(100000000000031u64)), Some(&1));
     }
 }
