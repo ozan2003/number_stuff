@@ -10,6 +10,4 @@ comment_width = 80
 
 format_strings = true
 
-match_arm_leading_pipes = "Always"
-
 empty_item_single_line = false
