@@ -66,12 +66,13 @@ pub fn trial_division(mut n: i64) -> BTreeMap<i64, u32>
 /// Find the number of trailing zeros in a number in its binary representation.
 fn trailing_zeros(num: &Integer) -> u32
 {
-    // (num & -num).trailing_zeros() in Rust.
-    // f64's mantissa is 53 bits long.
-    Float::with_val(53, num & (-num.clone()))
-        .log2()
-        .to_u32_saturating()
-        .expect("float too big for u32")
+    if num.is_zero()
+    {
+        return 0; // Special case for zero.
+    }
+
+    // Use num.find_one(0) to find position of lowest set bit.
+    num.find_one(0).unwrap_or(0)
 }
 
 /// Find the prime factors of a number using Pollard's rho algorithm
