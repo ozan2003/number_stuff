@@ -23,6 +23,7 @@ fn main()
             .parse()
             .expect("Couldn't parse number.");
 
+        println!("Using trial division:");
         time_and_print(&num, |n: &i64| trial_division(*n));
     }
     else
@@ -30,7 +31,8 @@ fn main()
         let num: Integer = input
             .parse()
             .expect("Couldn't parse number.");
-        
+
+        println!("Using Pollard's rho:");
         time_and_print(&num, pollards_rho);
     }
 }
