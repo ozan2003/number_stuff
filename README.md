@@ -6,16 +6,19 @@ This repo contains a collection of number theory utilities. The utilities are di
     * Primality Testing
       * Trial Division method
       * Miller-Rabin primality test
-    * Euler's Totient Function
     * Prime Generation
       * Sieve of Atkin
 2. Factorization
     * Pollard's rho algorithm
     * Trial Division method
+3. Number Theory Functions
+    * Euler's Totient Function
+    * Greatest Common Divisor (GCD)
+    * Least Common Multiple (LCM)
 
 The project is divided into the 4 binaries:
 
-1. `is_prime`: Contains primality testing
-2. `factor`: Contains factorization utilities
-3. `sieve`: Contains utilities related to prime generation
-4. `totient`: Contains Euler's Totient Function
+1. `is_prime`: Tests whether a given number is prime using primality testing algorithms.
+2. `factor`: Decomposes numbers into their prime factors using factorization methods.
+3. `sieve`: Generates all prime numbers up to a specified limit.
+4. `totient`: Calculates Euler's totient function φ(n), counting numbers coprime to n.
