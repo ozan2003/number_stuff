@@ -1,8 +1,8 @@
 use num_traits::PrimInt;
 use std::mem::swap;
 
-pub mod primes;
 pub mod factors;
+pub mod primes;
 
 /// # GCD
 /// Calculate the greatest common divisor of two numbers.
@@ -35,6 +35,10 @@ pub fn gcd<T: PrimInt + std::ops::RemAssign>(mut a: T, mut b: T) -> T
 #[must_use]
 pub fn lcm<T: PrimInt + std::ops::RemAssign>(a: T, b: T) -> T
 {
+    if a == T::zero() || b == T::zero()
+    {
+        return T::zero();
+    }
     a / gcd(a, b) * b // Prevent overflow.
 }
 
@@ -63,5 +67,21 @@ mod tests
         assert_eq!(lcm(12, 18), 36);
         assert_eq!(lcm(7, 13), 91);
         assert_eq!(lcm(48, 180), 720);
+    }
+
+    #[test]
+    fn test_lcm_with_zero()
+    {
+        assert_eq!(lcm(0, 5), 0);
+        assert_eq!(lcm(5, 0), 0);
+        assert_eq!(lcm(0, 0), 0);
+    }
+
+    #[test]
+    fn test_gcd_with_zero()
+    {
+        assert_eq!(gcd(0, 10), 10);
+        assert_eq!(gcd(10, 0), 10);
+        assert_eq!(gcd(0, 0), 0);
     }
 }
