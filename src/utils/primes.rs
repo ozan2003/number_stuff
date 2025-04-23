@@ -227,19 +227,20 @@ impl Primes
     pub fn new(n: usize) -> Self
     {
         /*
+         * The Sieve of Atkin works by identifying prime numbers based on
+         * quadratic forms and their remainders when divided by 60.
+         *
          * Primes greater than 3 can be expressed as 6k +/- 1.
          * This means primes are congruent to:
          *
          * 1, 5, 7, 11, 13, 17, 19, 23, 29, 31, ... (mod 60)
          *
-         * Three quadratic forms are used to generate primes:
+         * Three quadratic forms are used to generate prime candidates:
          *
-         * 1) 4x^2 + y^2: Covers primes 1, 5, 13, ... (mod 60)
-         * 2) 3x^2 + y^2: Covers primes 7, 19, 31, ... (mod 60)
-         * 3) 3x^2 - y^2: Covers primes 11, 23, 47, ... (mod 60)
-         *
-         * these forms produce numbers that are congruent to specific remainders
-         * modulo 60.
+         * 1) 4x^2 + y^2: Produces candidates with remainders 1, 13, 17, 29, 37, 41,
+         *    49, 53 (mod 60)
+         * 2) 3x^2 + y^2: Produces candidates with remainders 7, 19, 31, 43 (mod 60)
+         * 3) 3x^2 - y^2: Produces candidates with remainders 11, 23, 47, 59 (mod 60)
          *
          * By working modulo 60, we can efficiently identify which numbers are prime
          * candidates.
@@ -251,7 +252,7 @@ impl Primes
             return Primes { primes };
         }
 
-        // Set 2 and 3 as prime manually.
+        // Set 2, 3, and 5 as prime manually.
         if n >= 2
         {
             primes.set(2, true);
@@ -265,11 +266,11 @@ impl Primes
         {
             return Primes { primes };
         }
+        primes.set(5, true);
 
         let sqrt_n = n.isqrt() + 1;
 
-        // Iterate all pairs of integers (x, y) where 1 <= x, y <= sqrt(n).
-        // For each pair, check their remainders modulo 60.
+        // Step 1: Mark potential primes based on the quadratic forms
         for x in 1..sqrt_n
         {
             for y in 1..sqrt_n
@@ -278,14 +279,10 @@ impl Primes
                 let n1 = 4 * x * x + y * y;
                 if n1 <= n
                 {
-                    // if n1 <= n and n1 % 60 E {1, 13, 17, 29, 37, 41, 49, 53}
-                    // flip the n1.
                     let r = n1 % 60;
                     if r == 1 ||
-                        r == 5 ||
                         r == 13 ||
                         r == 17 ||
-                        r == 25 ||
                         r == 29 ||
                         r == 37 ||
                         r == 41 ||
@@ -300,8 +297,6 @@ impl Primes
                 let n2 = 3 * x * x + y * y;
                 if n2 <= n
                 {
-                    // if n2 <= n and n2 % 60 E {7, 19, 31, 43}
-                    // flip the n2.
                     let r = n2 % 60;
                     if r == 7 || r == 19 || r == 31 || r == 43
                     {
@@ -312,8 +307,6 @@ impl Primes
                 // Third quadratic form: 3x^2 - y^2 (x > y)
                 if x > y
                 {
-                    // if n3 <= n and n3 % 60 E {11, 23, 47, 59}
-                    // flip the n3.
                     let n3 = 3 * x * x - y * y;
                     if n3 <= n
                     {
@@ -327,17 +320,19 @@ impl Primes
             }
         }
 
-        // Eliminate composite numbers.
+        // Step 2: Remove composite numbers by sieving
         for i in 5..=sqrt_n
         {
-            // Mark all multiples of i^2 as composite.
+            // If i is marked as a prime candidate
             if primes[i]
             {
-                let mut n_sq = i * i;
-                while n_sq <= n
+                // Mark all multiples of i as composite
+                // Start from i*i since smaller multiples would have been marked already
+                let mut multiple = i * i;
+                while multiple <= n
                 {
-                    primes.set(n_sq, false);
-                    n_sq += i * i;
+                    primes.set(multiple, false);
+                    multiple += i; // Mark each multiple of i
                 }
             }
         }
@@ -372,56 +367,6 @@ impl Primes
             .filter(|&(_i, b)| b)
             .map(|(i, _b)| i)
     }
-}
-
-/// Check if a number is prime using trial division.
-///
-/// # Arguments
-///
-/// * `num` - The number to check for primality.
-///
-/// # Returns
-///
-/// `true` if `num` is prime, `false` otherwise.
-///
-/// # Examples
-///
-/// ```
-/// assert!(trial_division(18014398509482147));
-/// assert!(!trial_division(18014398509482171));
-/// assert!(trial_division(18014398509482329));
-/// assert!(!trial_division(18014398509482357));
-/// ```
-///
-/// # Panics
-///
-/// The function may panic when initializing the sieve.
-#[must_use]
-pub fn trial_division(num: u64) -> bool
-{
-    if num < 2
-    {
-        return false;
-    }
-
-    if num % 2 == 0
-    {
-        return num == 2;
-    }
-
-    // Any number greater than 1 is divided by a prime number less than its square
-    // root.
-    for i in Primes::new(usize::try_from(num.isqrt()).expect("Failed to convert u64 to usize"))
-        .iter()
-        .map(|x| x as u64)
-    {
-        if num % i == 0
-        {
-            return false;
-        }
-    }
-
-    true
 }
 
 #[cfg(test)]
@@ -498,7 +443,10 @@ mod tests
     {
         let primes = Primes::new(5000);
         assert_eq!(
-            primes.iter().take(SMALL_PRIMES.len()).collect::<Vec<_>>(),
+            primes
+                .iter()
+                .take(SMALL_PRIMES.len())
+                .collect::<Vec<_>>(),
             SMALL_PRIMES
                 .iter()
                 .map(|&x| x as usize)
