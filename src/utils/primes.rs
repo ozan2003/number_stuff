@@ -1,4 +1,13 @@
-use bit_vec::BitVec;
+//! Prime number services.
+//!
+//! Provides functions to check if a number is prime and to perform primality tests.
+//!
+//! # Functions
+//!
+//! * `is_prime` - Check if a number is prime using the Miller-Rabin primality test.
+//! * `trial_division` - Check if a number is prime using trial division.
+//! 
+use crate::utils::sieve::Primes;
 use rug::rand::RandState;
 use rug::{Complete, Integer};
 
@@ -216,195 +225,6 @@ pub fn trial_division(num: u64) -> bool
     true
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////
-/// A prime sieve.
-pub struct Primes
-{
-    primes: BitVec,
-}
-
-/// An iterator over prime numbers in a Primes sieve
-pub struct PrimesIterator<'a>
-{
-    primes: &'a BitVec,
-    current_index: usize,
-}
-
-impl Primes
-{
-    /// Return all primes <= n using the sieve of Atkin.
-    #[must_use]
-    pub fn new(n: usize) -> Self
-    {
-        /*
-         * The Sieve of Atkin works by identifying prime numbers based on
-         * quadratic forms and their remainders when divided by 60.
-         *
-         * Primes greater than 3 can be expressed as 6k +/- 1.
-         * This means primes are congruent to:
-         *
-         * 1, 5, 7, 11, 13, 17, 19, 23, 29, 31, ... (mod 60)
-         *
-         * Three quadratic forms are used to generate prime candidates:
-         *
-         * 1) 4x^2 + y^2: Produces candidates with remainders 1, 13, 17, 29, 37, 41,
-         *    49, 53 (mod 60)
-         * 2) 3x^2 + y^2: Produces candidates with remainders 7, 19, 31, 43 (mod 60)
-         * 3) 3x^2 - y^2: Produces candidates with remainders 11, 23, 47, 59 (mod 60)
-         *
-         * By working modulo 60, we can efficiently identify which numbers are prime
-         * candidates.
-         */
-        let mut primes = BitVec::from_elem(n + 1, false);
-
-        if n < 2
-        {
-            return Primes { primes };
-        }
-
-        // Set 2, 3, and 5 as prime manually.
-        if n >= 2
-        {
-            primes.set(2, true);
-        }
-        if n >= 3
-        {
-            primes.set(3, true);
-        }
-
-        if n < 5
-        {
-            return Primes { primes };
-        }
-        primes.set(5, true);
-
-        let sqrt_n = n.isqrt() + 1;
-
-        // Step 1: Mark potential primes based on the quadratic forms
-        for x in 1..sqrt_n
-        {
-            for y in 1..sqrt_n
-            {
-                // First quadratic form: 4x^2 + y^2
-                let n1 = 4 * x * x + y * y;
-                if n1 <= n
-                {
-                    let r = n1 % 60;
-                    if r == 1 ||
-                        r == 13 ||
-                        r == 17 ||
-                        r == 29 ||
-                        r == 37 ||
-                        r == 41 ||
-                        r == 49 ||
-                        r == 53
-                    {
-                        primes.set(n1, !primes[n1]);
-                    }
-                }
-
-                // Second quadratic form: 3x^2 + y^2
-                let n2 = 3 * x * x + y * y;
-                if n2 <= n
-                {
-                    let r = n2 % 60;
-                    if r == 7 || r == 19 || r == 31 || r == 43
-                    {
-                        primes.set(n2, !primes[n2]);
-                    }
-                }
-
-                // Third quadratic form: 3x^2 - y^2 (x > y)
-                if x > y
-                {
-                    let n3 = 3 * x * x - y * y;
-                    if n3 <= n
-                    {
-                        let r = n3 % 60;
-                        if r == 11 || r == 23 || r == 47 || r == 59
-                        {
-                            primes.set(n3, !primes[n3]);
-                        }
-                    }
-                }
-            }
-        }
-
-        // Step 2: Remove composite numbers by sieving
-        for i in 5..=sqrt_n
-        {
-            // If i is marked as a prime candidate
-            if primes[i]
-            {
-                // Mark all multiples of i as composite
-                // Start from i*i since smaller multiples would have been marked already
-                let mut multiple = i * i;
-                while multiple <= n
-                {
-                    primes.set(multiple, false);
-                    multiple += i; // Mark each multiple of i
-                }
-            }
-        }
-
-        Primes { primes }
-    }
-
-    /// Check if a number is prime.
-    #[must_use]
-    pub fn is_prime(&self, num: usize) -> bool
-    {
-        self.primes.get(num).unwrap_or(false)
-    }
-
-    /// Return the nth prime number, 0-indexed.
-    #[must_use]
-    pub fn nth(&self, n: usize) -> Option<usize>
-    {
-        self.iter().nth(n)
-    }
-
-    /// Returns an iterator over all prime numbers in the sieve
-    #[must_use]
-    pub fn iter(&self) -> PrimesIterator
-    {
-        PrimesIterator {
-            primes: &self.primes,
-            current_index: 0,
-        }
-    }
-}
-
-impl Iterator for PrimesIterator<'_>
-{
-    type Item = usize;
-
-    fn next(&mut self) -> Option<Self::Item>
-    {
-        while self.current_index < self.primes.len()
-        {
-            let index = self.current_index;
-            self.current_index += 1;
-
-            if self.primes.get(index).unwrap_or(false)
-            {
-                return Some(index);
-            }
-        }
-        None
-    }
-}
-
-impl<'a> IntoIterator for &'a Primes
-{
-    type Item = usize;
-    type IntoIter = PrimesIterator<'a>;
-
-    fn into_iter(self) -> Self::IntoIter
-    {
-        self.iter()
-    }
-}
 
 #[cfg(test)]
 mod tests
@@ -475,32 +295,6 @@ mod tests
     }
 
     #[test]
-    fn test_primes()
-    {
-        let primes = Primes::new(5000);
-        assert_eq!(
-            primes
-                .iter()
-                .take(SMALL_PRIMES.len())
-                .collect::<Vec<_>>(),
-            SMALL_PRIMES
-                .iter()
-                .map(|&x| x as usize)
-                .collect::<Vec<_>>()
-        );
-    }
-
-    #[test]
-    fn test_nth()
-    {
-        let primes = Primes::new(1000);
-        for (i, &prime) in SMALL_PRIMES.iter().enumerate()
-        {
-            assert_eq!(primes.nth(i), Some(prime as usize));
-        }
-    }
-
-    #[test]
     fn test_trial_division()
     {
         assert!(
@@ -510,39 +304,5 @@ mod tests
                 .copied()
                 .all(|x| trial_division(x as u64))
         );
-    }
-
-    #[test]
-    fn test_iterator_implementation()
-    {
-        let primes = Primes::new(100);
-
-        // Test direct iteration
-        let collected: Vec<_> = primes.iter().collect();
-        let expected: Vec<_> = vec![
-            2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83,
-            89, 97,
-        ];
-        assert_eq!(collected, expected);
-
-        // Test IntoIterator implementation
-        let for_loop_collected: Vec<_> = (&primes).into_iter().collect();
-        assert_eq!(for_loop_collected, expected);
-
-        // Test standard iterator combinators
-        let first_five: Vec<_> = primes.iter().take(5).collect();
-        assert_eq!(first_five, vec![2, 3, 5, 7, 11]);
-
-        // Test skip and take
-        let middle_five: Vec<_> = primes.iter().skip(5).take(5).collect();
-        assert_eq!(middle_five, vec![13, 17, 19, 23, 29]);
-
-        // Test filter
-        let mod_3_is_1: Vec<_> = primes
-            .iter()
-            .filter(|&p| p % 3 == 1)
-            .take(5)
-            .collect();
-        assert_eq!(mod_3_is_1, vec![7, 13, 19, 31, 37]);
     }
 }

@@ -1,4 +1,15 @@
-use crate::utils::primes::Primes;
+//! Integer factorization services.
+//!
+//! Provides functions to factorize integers into their prime factors.
+//!
+//! # Functions
+//!
+//! * `trial_division` - Factorize using trial division.
+//! * `pollards_rho` - Factorize using Pollard's rho algorithm.
+//! * `divisor_num` - Calculate the number of divisors of a number.
+//! * `totient` - Calculate Euler's totient function.
+//! 
+use crate::utils::sieve::Primes;
 use rug::integer::IsPrime;
 use rug::ops::Pow;
 use rug::rand::RandState;
@@ -17,7 +28,7 @@ use std::collections::BTreeMap;
 /// # Examples
 ///
 /// ```
-/// let f = factors(12);
+/// let f = trial_division(12);
 /// assert_eq!(f.get(&2), Some(&2)); // 12 = 2^2 * 3^1
 /// assert_eq!(f.get(&3), Some(&1));
 /// ```

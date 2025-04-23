@@ -1,9 +1,19 @@
+//! Utility functions.
+//!
+//! Provides utility functions for common mathematical operations.
+//!
+//! # Functions
+//!
+//! * `gcd` - Calculate the greatest common divisor of two numbers.
+//! * `lcm` - Calculate the least common multiple of two numbers.
+//!
 use num_traits::PrimInt;
 use std::mem::swap;
 use std::ops::RemAssign;
 
 pub mod factors;
 pub mod primes;
+pub mod sieve;
 
 /// # GCD
 /// Calculate the greatest common divisor of two numbers.
