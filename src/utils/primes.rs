@@ -230,37 +230,6 @@ pub struct PrimesIterator<'a>
     current_index: usize,
 }
 
-impl Iterator for PrimesIterator<'_>
-{
-    type Item = usize;
-
-    fn next(&mut self) -> Option<Self::Item>
-    {
-        while self.current_index < self.primes.len()
-        {
-            let index = self.current_index;
-            self.current_index += 1;
-
-            if self.primes.get(index).unwrap_or(false)
-            {
-                return Some(index);
-            }
-        }
-        None
-    }
-}
-
-impl<'a> IntoIterator for &'a Primes
-{
-    type Item = usize;
-    type IntoIter = PrimesIterator<'a>;
-
-    fn into_iter(self) -> Self::IntoIter
-    {
-        self.iter()
-    }
-}
-
 impl Primes
 {
     /// Return all primes <= n using the sieve of Atkin.
@@ -403,6 +372,37 @@ impl Primes
             primes: &self.primes,
             current_index: 0,
         }
+    }
+}
+
+impl Iterator for PrimesIterator<'_>
+{
+    type Item = usize;
+
+    fn next(&mut self) -> Option<Self::Item>
+    {
+        while self.current_index < self.primes.len()
+        {
+            let index = self.current_index;
+            self.current_index += 1;
+
+            if self.primes.get(index).unwrap_or(false)
+            {
+                return Some(index);
+            }
+        }
+        None
+    }
+}
+
+impl<'a> IntoIterator for &'a Primes
+{
+    type Item = usize;
+    type IntoIter = PrimesIterator<'a>;
+
+    fn into_iter(self) -> Self::IntoIter
+    {
+        self.iter()
     }
 }
 
