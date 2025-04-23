@@ -19,6 +19,6 @@ This repo contains a collection of number theory utilities. The utilities are di
 The project is divided into the 4 binaries:
 
 1. `is_prime`: Tests whether a given number is prime using primality testing algorithms.
-2. `factor`: Decomposes numbers into their prime factors using factorization methods.
-3. `sieve`: Generates all prime numbers up to a specified limit.
+2. `factorize`: Decomposes numbers into their prime factors using factorization methods.
+3. `primesieve`: Generates all prime numbers up to a specified limit.
 4. `totient`: Calculates Euler's totient function φ(n), counting numbers coprime to n.
