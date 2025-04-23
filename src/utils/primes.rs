@@ -220,6 +220,44 @@ pub struct Primes
     primes: BitVec,
 }
 
+/// An iterator over prime numbers in a Primes sieve
+pub struct PrimesIterator<'a>
+{
+    primes: &'a BitVec,
+    current_index: usize,
+}
+
+impl<'a> Iterator for PrimesIterator<'a>
+{
+    type Item = usize;
+
+    fn next(&mut self) -> Option<Self::Item>
+    {
+        while self.current_index < self.primes.len()
+        {
+            let index = self.current_index;
+            self.current_index += 1;
+
+            if self.primes.get(index).unwrap_or(false)
+            {
+                return Some(index);
+            }
+        }
+        None
+    }
+}
+
+impl<'a> IntoIterator for &'a Primes
+{
+    type Item = usize;
+    type IntoIter = PrimesIterator<'a>;
+
+    fn into_iter(self) -> Self::IntoIter
+    {
+        self.iter()
+    }
+}
+
 impl Primes
 {
     /// Return all primes <= n using the sieve of Atkin.
@@ -351,21 +389,16 @@ impl Primes
     #[must_use]
     pub fn nth(&self, n: usize) -> Option<usize>
     {
-        self.primes
-            .iter()
-            .enumerate()
-            .filter(|&(_i, b)| b)
-            .nth(n)
-            .map(|(i, _b)| i)
+        self.iter().nth(n)
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = usize>
+    /// Returns an iterator over all prime numbers in the sieve
+    pub fn iter(&self) -> PrimesIterator
     {
-        self.primes
-            .iter()
-            .enumerate()
-            .filter(|&(_i, b)| b)
-            .map(|(i, _b)| i)
+        PrimesIterator {
+            primes: &self.primes,
+            current_index: 0,
+        }
     }
 }
 
@@ -474,5 +507,39 @@ mod tests
                 .copied()
                 .all(|x| trial_division(x as u64))
         );
+    }
+
+    #[test]
+    fn test_iterator_implementation()
+    {
+        let primes = Primes::new(100);
+
+        // Test direct iteration
+        let collected: Vec<_> = primes.iter().collect();
+        let expected: Vec<_> = vec![
+            2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83,
+            89, 97,
+        ];
+        assert_eq!(collected, expected);
+
+        // Test IntoIterator implementation
+        let for_loop_collected: Vec<_> = (&primes).into_iter().collect();
+        assert_eq!(for_loop_collected, expected);
+
+        // Test standard iterator combinators
+        let first_five: Vec<_> = primes.iter().take(5).collect();
+        assert_eq!(first_five, vec![2, 3, 5, 7, 11]);
+
+        // Test skip and take
+        let middle_five: Vec<_> = primes.iter().skip(5).take(5).collect();
+        assert_eq!(middle_five, vec![13, 17, 19, 23, 29]);
+
+        // Test filter
+        let mod_3_is_1: Vec<_> = primes
+            .iter()
+            .filter(|&p| p % 3 == 1)
+            .take(5)
+            .collect();
+        assert_eq!(mod_3_is_1, vec![7, 13, 19, 31, 37]);
     }
 }
