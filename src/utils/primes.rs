@@ -5,21 +5,24 @@ use rug::{Complete, Integer};
 /// Determine the number of iterations `k` based on the magnitude of `num`.
 fn determine_k(num: &Integer) -> u32
 {
-    if *num < Integer::i_pow_u(10, 3).complete()
+    // Use bit length to determine the number of rounds.
+    let bits = num.significant_bits();
+
+    if bits < 16
     {
-        5
+        5 // Small numbers (< 2^16)
     }
-    else if *num < Integer::i_pow_u(10, 6).complete()
+    else if bits < 32
     {
-        10
+        10 // Medium numbers (< 2^32)
     }
-    else if *num < Integer::i_pow_u(10, 9).complete()
+    else if bits < 64
     {
-        20
+        20 // Large numbers (< 2^64)
     }
     else
     {
-        50
+        50 // Very large numbers
     }
 }
 
