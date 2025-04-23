@@ -8,7 +8,6 @@
 //! * `pollards_rho` - Factorize using Pollard's rho algorithm.
 //! * `divisor_num` - Calculate the number of divisors of a number.
 //! * `totient` - Calculate Euler's totient function.
-//! 
 use crate::utils::sieve::Primes;
 use rug::integer::IsPrime;
 use rug::ops::Pow;
@@ -79,6 +78,30 @@ pub fn trial_division(mut n: i64) -> BTreeMap<i64, u32>
 }
 
 /// Find the number of trailing zeros in a number in its binary representation.
+///
+/// Determines how many times a number is divisible by 2 by counting the
+/// consecutive zero bits from the least significant bit.
+///
+/// # Arguments
+///
+/// * `num` - The integer to analyze
+///
+/// # Returns
+///
+/// The number of trailing zeros in the binary representation of `num`.
+///
+/// Returns 0 for the special case of 0.
+///
+/// # Examples
+///
+/// ```
+/// use number_stuff::utils::factors::trailing_zeros;
+/// use rug::Integer;
+///
+/// assert_eq!(trailing_zeros(&Integer::from(8)), 3);  // 8 = 1000₂, has 3 trailing zeros
+/// assert_eq!(trailing_zeros(&Integer::from(12)), 2); // 12 = 1100₂, has 2 trailing zeros
+/// assert_eq!(trailing_zeros(&Integer::from(0)), 0);  // Special case
+/// ```
 fn trailing_zeros(num: &Integer) -> u32
 {
     if num.is_zero()
@@ -93,16 +116,42 @@ fn trailing_zeros(num: &Integer) -> u32
 /// Find the prime factors of a number using Pollard's rho algorithm
 /// repeatedly.
 ///
+/// This function implements Pollard's rho algorithm, a probabilistic
+/// factorization method that is particularly efficient for finding small
+/// factors of large numbers. The function handles the factorization recursively
+/// until all factors are found.
+///
 /// # Arguments
 ///
-/// * `n` - The number to factorize.
+/// * `num` - The number to factorize.
 ///
 /// # Returns
-/// A map of prime factors and their frequencies.
+///
+/// A map of prime factors and their exponents.
+///
+/// For inputs 0 and 1, returns an
+/// empty map. For negative inputs, includes -1 as a factor with exponent 1.
+///
+/// # Examples
+///
+/// ```
+/// use number_stuff::utils::factors::pollards_rho;
+/// use rug::Integer;
+/// use std::collections::BTreeMap;
+///
+/// // Factorize 12 = 2^2 * 3^1
+/// let factors = pollards_rho(&Integer::from(12));
+/// assert_eq!(factors.get(&Integer::from(2)), Some(&2));
+/// assert_eq!(factors.get(&Integer::from(3)), Some(&1));
+///
+/// // Special cases
+/// assert_eq!(pollards_rho(&Integer::from(0)).len(), 0);
+/// assert_eq!(pollards_rho(&Integer::from(1)).len(), 0);
+/// ```
 ///
 /// # Warning
-/// Since the algorithm is probabilistic, it may not always return the
-/// correct factors or may not factorize the number or some factors at all.
+/// Since the algorithm is probabilistic, it may not always find all factors
+/// for very large or specially constructed numbers.
 #[allow(clippy::many_single_char_names)]
 #[must_use]
 pub fn pollards_rho(num: &Integer) -> BTreeMap<Integer, u32>
@@ -223,6 +272,7 @@ pub fn pollards_rho(num: &Integer) -> BTreeMap<Integer, u32>
 /// Calculates the number of divisors of a given number.
 ///
 /// Uses the prime factorization to compute the total number of divisors.
+/// 
 /// For a number N = p1^a * p2^b * p3^c, the number of divisors is
 /// (a+1)(b+1)(c+1).
 ///

@@ -1,17 +1,35 @@
 //! Prime number services.
 //!
-//! Provides functions to check if a number is prime and to perform primality tests.
+//! Provides functions to check if a number is prime and to perform primality
+//! tests.
 //!
 //! # Functions
 //!
-//! * `is_prime` - Check if a number is prime using the Miller-Rabin primality test.
+//! * `is_prime` - Check if a number is prime using the Miller-Rabin primality
+//!   test.
 //! * `trial_division` - Check if a number is prime using trial division.
-//! 
 use crate::utils::sieve::Primes;
 use rug::rand::RandState;
 use rug::{Complete, Integer};
 
 /// Determine the number of iterations `k` based on the magnitude of `num`.
+///
+/// This function sets the number of iterations for the Miller-Rabin primality
+/// test based on the bit length of the input number. Larger numbers require
+/// more iterations to maintain the same probability of correctness.
+///
+/// # Arguments
+///
+/// * `num` - The number whose primality is being tested
+///
+/// # Returns
+///
+/// The number of iterations to use for the Miller-Rabin test.
+///
+/// # Details
+///
+/// For a k-iteration Miller-Rabin test, the probability of a composite number
+/// being incorrectly identified as prime is at most 4^(-k).
 fn determine_k(num: &Integer) -> u32
 {
     // Use bit length to determine the number of rounds.
@@ -45,7 +63,7 @@ fn determine_k(num: &Integer) -> u32
 ///
 /// # Returns
 ///
-/// `true` if `num` is prime, `false` otherwise.
+/// `true` if `num` is probably prime, `false` otherwise.
 ///
 /// # Examples
 ///
@@ -177,6 +195,9 @@ pub fn is_prime(num: &Integer) -> bool
 
 /// Check if a number is prime using trial division.
 ///
+/// This function uses a prime sieve to efficiently test divisibility of `num`
+/// by all primes up to the square root of `num`.
+///
 /// # Arguments
 ///
 /// * `num` - The number to check for primality.
@@ -185,9 +206,16 @@ pub fn is_prime(num: &Integer) -> bool
 ///
 /// `true` if `num` is prime, `false` otherwise.
 ///
+/// # Performance
+///
+/// This method is efficient for numbers up to approximately 10^12. For larger
+/// numbers, consider using the probabilistic `is_prime()` function instead.
+///
 /// # Examples
 ///
 /// ```
+/// use number_stuff::utils::primes::trial_division;
+///
 /// assert!(trial_division(18014398509482147));
 /// assert!(!trial_division(18014398509482171));
 /// assert!(trial_division(18014398509482329));
@@ -196,7 +224,8 @@ pub fn is_prime(num: &Integer) -> bool
 ///
 /// # Panics
 ///
-/// The function may panic when initializing the sieve.
+/// The function may panic when initializing the sieve or if the square root of
+/// `num` cannot be represented as a `usize`.
 #[must_use]
 pub fn trial_division(num: u64) -> bool
 {
@@ -224,7 +253,6 @@ pub fn trial_division(num: u64) -> bool
 
     true
 }
-
 
 #[cfg(test)]
 mod tests

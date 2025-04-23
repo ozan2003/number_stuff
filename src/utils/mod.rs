@@ -6,7 +6,6 @@
 //!
 //! * `gcd` - Calculate the greatest common divisor of two numbers.
 //! * `lcm` - Calculate the least common multiple of two numbers.
-//!
 use num_traits::PrimInt;
 use std::mem::swap;
 use std::ops::RemAssign;
@@ -15,13 +14,38 @@ pub mod factors;
 pub mod primes;
 pub mod sieve;
 
-/// # GCD
 /// Calculate the greatest common divisor of two numbers.
+///
+/// Uses the Euclidean algorithm to compute the GCD efficiently.
+///
+/// # Type Parameters
+///
+/// * `T` - Any primitive integer type that implements `PrimInt` and `RemAssign`
+///   traits. This includes `i8`, `i16`, `i32`, `i64`, `i128`, `u8`, `u16`,
+///   `u32`, `u64`, `u128`.
+///
+/// # Arguments
+///
+/// * `a` - First number
+/// * `b` - Second number
+///
+/// # Returns
+///
+/// The greatest common divisor of `a` and `b`.
+///
+/// # Special Cases
+///
+/// * If either input is 0, returns the other input
+/// * If both inputs are 0, returns 0
 ///
 /// # Examples
 /// ```
+/// use number_stuff::utils::gcd;
+///
 /// assert_eq!(gcd(1071, 462), 21);
 /// assert_eq!(gcd(2, 3), 1);
+/// assert_eq!(gcd(0, 5), 5);
+/// assert_eq!(gcd(0, 0), 0);
 /// ```
 #[must_use]
 pub fn gcd<T: PrimInt + RemAssign>(mut a: T, mut b: T) -> T
@@ -35,13 +59,36 @@ pub fn gcd<T: PrimInt + RemAssign>(mut a: T, mut b: T) -> T
     a
 }
 
-/// # LCM
 /// Calculate the least common multiple of two numbers.
+///
+/// Computes the LCM using the relation: lcm(a,b) = |a*b| / gcd(a,b).
+///
+/// # Type Parameters
+///
+/// * `T` - Any primitive integer type that implements `PrimInt` and `RemAssign`
+///   traits. This includes `i8`, `i16`, `i32`, `i64`, `i128`, `u8`, `u16`,
+///   `u32`, `u64`, `u128`.
+///
+/// # Arguments
+///
+/// * `a` - First number
+/// * `b` - Second number
+///
+/// # Returns
+///
+/// The least common multiple of `a` and `b`.
+///
+/// # Special Cases
+///
+/// * If either input is 0, returns 0
 ///
 /// # Examples
 /// ```
+/// use number_stuff::utils::lcm;
+///
 /// assert_eq!(lcm(21, 6), 42);
 /// assert_eq!(lcm(2, 3), 6);
+/// assert_eq!(lcm(0, 5), 0);
 /// ```
 #[must_use]
 pub fn lcm<T: PrimInt + RemAssign>(a: T, b: T) -> T

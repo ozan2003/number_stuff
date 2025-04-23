@@ -22,7 +22,7 @@ pub struct Primes
 /// use crate::utils::sieve::Primes;
 ///
 /// let primes = Primes::new(100);
-/// 
+///
 /// // Iterate through all primes up to 100
 /// for prime in primes.iter() {
 ///     println!("{}", prime);
@@ -41,6 +41,28 @@ pub struct PrimesIterator<'a>
 impl Primes
 {
     /// Return all primes <= n using the sieve of Atkin.
+    ///
+    /// # Arguments
+    ///
+    /// * `n` - The upper bound up to which to find all primes
+    ///
+    /// # Returns
+    ///
+    /// A `Primes` struct containing a sieve with all primes up to `n`
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use number_stuff::utils::sieve::Primes;
+    ///
+    /// let primes = Primes::new(100);
+    /// assert!(primes.is_prime(2));
+    /// assert!(primes.is_prime(3));
+    /// assert!(primes.is_prime(5));
+    /// assert!(primes.is_prime(97));
+    /// assert!(!primes.is_prime(4));
+    /// assert!(!primes.is_prime(100));
+    /// ```
     #[must_use]
     pub fn new(n: usize) -> Self
     {
@@ -159,6 +181,27 @@ impl Primes
     }
 
     /// Check if a number is prime.
+    ///
+    /// # Arguments
+    ///
+    /// * `num` - The number to check for primality
+    ///
+    /// # Returns
+    ///
+    /// Returns `true` if the number is prime, `false` otherwise.
+    /// If `num` is larger than the sieve's maximum value, returns `false`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use number_stuff::utils::sieve::Primes;
+    ///
+    /// let primes = Primes::new(100);
+    /// assert!(primes.is_prime(7));
+    /// assert!(!primes.is_prime(6));
+    /// // Larger than sieve range
+    /// assert!(!primes.is_prime(101));
+    /// ```
     #[must_use]
     pub fn is_prime(&self, num: usize) -> bool
     {
@@ -166,6 +209,28 @@ impl Primes
     }
 
     /// Return the nth prime number, 0-indexed.
+    ///
+    /// # Arguments
+    ///
+    /// * `n` - The index of the prime to retrieve (0-indexed)
+    ///
+    /// # Returns
+    ///
+    /// Returns the nth prime number as `Some(prime)` or `None` if the index
+    /// is out of bounds for the sieve.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use number_stuff::utils::sieve::Primes;
+    ///
+    /// let primes = Primes::new(100);
+    /// assert_eq!(primes.nth(0), Some(2));  // 0th prime is 2
+    /// assert_eq!(primes.nth(1), Some(3));  // 1st prime is 3
+    /// assert_eq!(primes.nth(4), Some(11)); // 4th prime is 11
+    /// // The 26th prime is 101, which is larger than the sieve's maximum
+    /// assert_eq!(primes.nth(25), None);
+    /// ```
     #[must_use]
     pub fn nth(&self, n: usize) -> Option<usize>
     {
@@ -173,6 +238,21 @@ impl Primes
     }
 
     /// Returns an iterator over all prime numbers in the sieve
+    ///
+    /// # Returns
+    ///
+    /// A `PrimesIterator` that yields all prime numbers from the sieve in
+    /// ascending order.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use number_stuff::utils::sieve::Primes;
+    ///
+    /// let primes = Primes::new(20);
+    /// let primes_vec: Vec<_> = primes.iter().collect();
+    /// assert_eq!(primes_vec, vec![2, 3, 5, 7, 11, 13, 17, 19]);
+    /// ```
     #[must_use]
     pub fn iter(&self) -> PrimesIterator
     {
