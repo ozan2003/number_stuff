@@ -1,6 +1,7 @@
 use number_stuff::utils::primes::Primes;
 use std::env::args;
 use std::process::exit;
+use std::time::Instant;
 
 fn main()
 {
@@ -19,11 +20,15 @@ fn main()
         exit(1);
     };
 
+    let t0 = Instant::now();
     let primes = Primes::new(n);
+    let elapsed = t0.elapsed();
 
     println!("Primes up to {n}:");
     for p in &primes
     {
         println!("{p}");
     }
+
+    println!("Time taken: {:?}", elapsed);
 }
