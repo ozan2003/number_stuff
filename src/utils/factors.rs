@@ -51,7 +51,10 @@ pub fn trial_division(mut n: i64) -> BTreeMap<i64, u32>
     {
         while n % prime == 0
         {
-            *factors.entry(prime).or_insert(0) += 1;
+            factors
+                .entry(prime)
+                .and_modify(|v| *v += 1)
+                .or_insert(1);
             n /= prime;
         }
     }
@@ -371,7 +374,7 @@ mod tests
         assert_eq!(f.get(&Integer::from(3607)), Some(&1));
         assert_eq!(f.get(&Integer::from(3803)), Some(&1));
         assert_eq!(f.get(&Integer::from(27961)), Some(&1));
-        
+
         let big_prime = Integer::from(18446744073709551557u64);
         let f = pollards_rho(&big_prime);
         assert!(f.len() == 1);
