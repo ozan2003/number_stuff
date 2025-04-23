@@ -91,9 +91,9 @@ pub fn is_prime(num: &Integer) -> bool
     // Early returns for small numbers
     match num.to_i32()
     {
-        | Some(n) if n <= 1 => return false,
-        | Some(n) if n <= 3 => return true,
-        | _ =>
+        Some(n) if n <= 1 => return false,
+        Some(n) if n <= 3 => return true,
+        _ =>
         {}
     }
 
