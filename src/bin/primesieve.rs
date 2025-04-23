@@ -1,4 +1,4 @@
-use number_stuff::utils::primes::Primes;
+use number_stuff::utils::sieve::Primes;
 use std::env::args;
 use std::process::exit;
 use std::time::Instant;
