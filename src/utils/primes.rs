@@ -227,7 +227,7 @@ pub struct PrimesIterator<'a>
     current_index: usize,
 }
 
-impl<'a> Iterator for PrimesIterator<'a>
+impl Iterator for PrimesIterator<'_>
 {
     type Item = usize;
 
@@ -393,6 +393,7 @@ impl Primes
     }
 
     /// Returns an iterator over all prime numbers in the sieve
+    #[must_use]
     pub fn iter(&self) -> PrimesIterator
     {
         PrimesIterator {

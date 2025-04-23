@@ -22,7 +22,7 @@ fn main()
     let primes = Primes::new(n);
 
     println!("Primes up to {n}:");
-    for p in primes.iter()
+    for p in &primes
     {
         println!("{p}");
     }
