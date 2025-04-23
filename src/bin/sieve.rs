@@ -30,5 +30,5 @@ fn main()
         println!("{p}");
     }
 
-    println!("Time taken: {:?}", elapsed);
+    println!("Time taken: {elapsed:?}");
 }
