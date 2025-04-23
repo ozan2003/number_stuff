@@ -1,5 +1,6 @@
 use num_traits::PrimInt;
 use std::mem::swap;
+use std::ops::RemAssign;
 
 pub mod factors;
 pub mod primes;
@@ -13,7 +14,7 @@ pub mod primes;
 /// assert_eq!(gcd(2, 3), 1);
 /// ```
 #[must_use]
-pub fn gcd<T: PrimInt + std::ops::RemAssign>(mut a: T, mut b: T) -> T
+pub fn gcd<T: PrimInt + RemAssign>(mut a: T, mut b: T) -> T
 {
     while b != T::zero()
     {
@@ -33,7 +34,7 @@ pub fn gcd<T: PrimInt + std::ops::RemAssign>(mut a: T, mut b: T) -> T
 /// assert_eq!(lcm(2, 3), 6);
 /// ```
 #[must_use]
-pub fn lcm<T: PrimInt + std::ops::RemAssign>(a: T, b: T) -> T
+pub fn lcm<T: PrimInt + RemAssign>(a: T, b: T) -> T
 {
     if a == T::zero() || b == T::zero()
     {
