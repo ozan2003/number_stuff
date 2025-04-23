@@ -163,6 +163,56 @@ pub fn is_prime(num: &Integer) -> bool
     true
 }
 
+/// Check if a number is prime using trial division.
+///
+/// # Arguments
+///
+/// * `num` - The number to check for primality.
+///
+/// # Returns
+///
+/// `true` if `num` is prime, `false` otherwise.
+///
+/// # Examples
+///
+/// ```
+/// assert!(trial_division(18014398509482147));
+/// assert!(!trial_division(18014398509482171));
+/// assert!(trial_division(18014398509482329));
+/// assert!(!trial_division(18014398509482357));
+/// ```
+///
+/// # Panics
+///
+/// The function may panic when initializing the sieve.
+#[must_use]
+pub fn trial_division(num: u64) -> bool
+{
+    if num < 2
+    {
+        return false;
+    }
+
+    if num % 2 == 0
+    {
+        return num == 2;
+    }
+
+    // Any number greater than 1 is divided by a prime number less than its square
+    // root.
+    for i in Primes::new(usize::try_from(num.isqrt()).expect("Failed to convert u64 to usize"))
+        .iter()
+        .map(|x| x as u64)
+    {
+        if num % i == 0
+        {
+            return false;
+        }
+    }
+
+    true
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////
 /// A prime sieve.
 pub struct Primes
