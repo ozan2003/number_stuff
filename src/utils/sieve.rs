@@ -192,7 +192,7 @@ impl Primes
     /// # Returns
     ///
     /// Returns `true` if the number is prime, `false` otherwise.
-    /// If `num` is larger than the sieve's maximum value, returns `false`.
+    /// Returns `None` if the number is out of bounds for the sieve.
     ///
     /// # Examples
     ///
@@ -206,9 +206,9 @@ impl Primes
     /// assert!(!primes.is_prime(101));
     /// ```
     #[must_use]
-    pub fn is_prime(&self, num: usize) -> bool
+    pub fn is_prime(&self, num: usize) -> Option<bool>
     {
-        self.primes.get(num).unwrap_or(false)
+        self.primes.get(num)
     }
 
     /// Return the nth prime number, 0-indexed.
