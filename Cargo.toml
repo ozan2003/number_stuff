@@ -16,3 +16,34 @@ debug = false
 codegen-units = 1
 panic = "abort"
 strip = true
+
+[lints.clippy]
+correctness = { level = "forbid", priority = -1 }
+perf = { level = "deny", priority = -2 }
+pedantic = { level = "warn", priority = -3 }
+style = { level = "warn", priority = -4 }
+complexity = { level = "warn", priority = -5 }
+suspicious = { level = "warn", priority = -6 }
+
+clone_on_ref_ptr = { level = "warn", priority = -4 }
+pattern_type_mismatch = { level = "warn", priority = -4 }
+derive-partial-eq-without-eq = { level = "warn", priority = -5 }
+unnecessary-struct-initialization = { level = "warn", priority = -6 }
+redundant-pub-crate = { level = "warn", priority = -7 }
+missing-const-for-fn = { level = "warn", priority = -8 }
+uninlined-format-args = "allow"
+
+unchecked_time_subtraction = { level = "deny", priority = 0 }
+
+# Misc
+multiple_unsafe_ops_per_block = { level = "warn", priority = 0 }
+lossy_float_literal = { level = "warn", priority = 0 }
+float_cmp = { level = "warn", priority = 0 }
+float_cmp_const = { level = "warn", priority = 0 }
+while_float = { level = "warn", priority = 0 }
+string_slice = { level = "warn", priority = 0 }
+get_unwrap = { level = "warn", priority = 0 }
+mem_forget = { level = "warn", priority = 0 }
+use_self = { level = "warn", priority = 0 }
+useless_let_if_seq = { level = "warn", priority = 0 }
+unnecessary_self_imports = { level = "warn", priority = 0 }

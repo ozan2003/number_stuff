@@ -8,12 +8,14 @@
 //! * `pollards_rho` - Factorize using Pollard's rho algorithm.
 //! * `divisor_num` - Calculate the number of divisors of a number.
 //! * `totient` - Calculate Euler's totient function.
-use crate::utils::sieve::Primes;
+use std::collections::BTreeMap;
+
 use rug::integer::IsPrime;
 use rug::ops::Pow;
 use rug::rand::RandState;
 use rug::{Complete, Integer};
-use std::collections::BTreeMap;
+
+use crate::utils::sieve::Primes;
 
 /// Computes the prime factorization of a number.
 ///
@@ -55,8 +57,12 @@ pub fn trial_division(mut n: i64) -> BTreeMap<i64, u32>
         return factors;
     }
 
-    for prime in Primes::new(usize::try_from(n.isqrt()).expect("Couldn't truncate i64 to usize"))
-        .iter()
+    let primes = Primes::new(
+        usize::try_from(n.isqrt()).expect("Couldn't truncate i64 to usize"),
+    );
+
+    for prime in primes
+        .into_iter()
         .map(|p| i64::try_from(p).expect("Prime too large for i64"))
     {
         while n % prime == 0
@@ -156,6 +162,8 @@ fn trailing_zeros(num: &Integer) -> u32
 #[must_use]
 pub fn pollards_rho(num: &Integer) -> BTreeMap<Integer, u32>
 {
+    const MAX_ITERATIONS: i32 = 100; // safety guard to prevent infinite loops.
+
     let mut factors = BTreeMap::new();
     let mut num = num.clone();
 
@@ -226,9 +234,8 @@ pub fn pollards_rho(num: &Integer) -> BTreeMap<Integer, u32>
 
         // Floyd's cycle finding with optimizations.
         let mut iterations = 0;
-        let max_iterations = 100; // safety guard to prevent infinite loops.
 
-        while d == *Integer::ONE && iterations < max_iterations
+        while d == *Integer::ONE && iterations < MAX_ITERATIONS
         {
             x = f(&x);
             y = f(&f(&y));
@@ -256,6 +263,7 @@ pub fn pollards_rho(num: &Integer) -> BTreeMap<Integer, u32>
                     .and_modify(|v| *v += freq)
                     .or_insert(freq);
             }
+
             return factors;
         }
     }
@@ -272,7 +280,7 @@ pub fn pollards_rho(num: &Integer) -> BTreeMap<Integer, u32>
 /// Calculates the number of divisors of a given number.
 ///
 /// Uses the prime factorization to compute the total number of divisors.
-/// 
+///
 /// For a number N = p1^a * p2^b * p3^c, the number of divisors is
 /// (a+1)(b+1)(c+1).
 ///
@@ -428,27 +436,29 @@ mod tests
         assert_eq!(f.get(&Integer::from(5)), Some(&3));
 
         // Large composite number with medium-sized factors.
-        let f = pollards_rho(&Integer::from(1234567890123456789u64));
+        let f = pollards_rho(&Integer::from(1_234_567_890_123_456_789_u64));
         assert_eq!(f.get(&Integer::from(3)), Some(&2));
         assert_eq!(f.get(&Integer::from(101)), Some(&1));
         assert_eq!(f.get(&Integer::from(3541)), Some(&1));
-        assert_eq!(f.get(&Integer::from(3607)), Some(&1));
-        assert_eq!(f.get(&Integer::from(3803)), Some(&1));
-        assert_eq!(f.get(&Integer::from(27961)), Some(&1));
+        assert_eq!(f.get(&Integer::from(3_607)), Some(&1));
+        assert_eq!(f.get(&Integer::from(3_803)), Some(&1));
+        assert_eq!(f.get(&Integer::from(27_961)), Some(&1));
 
-        let big_prime = Integer::from(18446744073709551557u64);
+        let big_prime = Integer::from(18_446_744_073_709_551_557_u64);
         let f = pollards_rho(&big_prime);
         assert!(f.len() == 1);
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic = "Pollard's rho algorithm is probabilistic and may fail on \
+                      certain inputs."]
     fn test_pollards_rho_not_working()
     {
-        let big_number = Integer::from(10000000000006800000000001147u128);
+        let big_number =
+            Integer::from(10_000_000_000_006_800_000_000_001_147_u128);
         let f = pollards_rho(&big_number);
-        assert_eq!(f.get(&Integer::from(1858741)), Some(&1));
-        assert_eq!(f.get(&Integer::from(53799857)), Some(&1));
-        assert_eq!(f.get(&Integer::from(100000000000031u64)), Some(&1));
+        assert_eq!(f.get(&Integer::from(1_858_741)), Some(&1));
+        assert_eq!(f.get(&Integer::from(53_799_857)), Some(&1));
+        assert_eq!(f.get(&Integer::from(100_000_000_000_031_u64)), Some(&1));
     }
 }

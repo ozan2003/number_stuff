@@ -1,10 +1,11 @@
-use number_stuff::utils::factors::{pollards_rho, trial_division};
-use rug::Integer;
 use std::collections::BTreeMap;
 use std::env::args;
 use std::ops::Mul;
 use std::process::exit;
 use std::time::Instant;
+
+use number_stuff::utils::factors::{pollards_rho, trial_division};
+use rug::Integer;
 
 fn main()
 {

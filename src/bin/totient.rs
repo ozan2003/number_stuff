@@ -1,7 +1,8 @@
-use number_stuff::utils::factors::totient;
 use std::env::args;
 use std::process::exit;
 use std::time::Instant;
+
+use number_stuff::utils::factors::totient;
 
 fn main()
 {

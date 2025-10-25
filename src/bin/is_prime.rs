@@ -1,8 +1,9 @@
-use number_stuff::utils::primes::is_prime;
-use rug::Integer;
 use std::env::args;
 use std::process::exit;
 use std::time::Instant;
+
+use number_stuff::utils::primes::is_prime;
+use rug::Integer;
 
 fn main()
 {

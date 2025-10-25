@@ -77,19 +77,21 @@ impl Primes
          *
          * Three quadratic forms are used to generate prime candidates:
          *
-         * 1) 4x^2 + y^2: Produces candidates with remainders 1, 13, 17, 29, 37, 41,
-         *    49, 53 (mod 60)
-         * 2) 3x^2 + y^2: Produces candidates with remainders 7, 19, 31, 43 (mod 60)
-         * 3) 3x^2 - y^2: Produces candidates with remainders 11, 23, 47, 59 (mod 60)
+         * 1) 4x^2 + y^2: Produces candidates with remainders 1, 13, 17, 29,
+         *    37, 41, 49, 53 (mod 60)
+         * 2) 3x^2 + y^2: Produces candidates with remainders 7, 19, 31, 43
+         *    (mod 60)
+         * 3) 3x^2 - y^2: Produces candidates with remainders 11, 23, 47, 59
+         *    (mod 60)
          *
-         * By working modulo 60, we can efficiently identify which numbers are prime
-         * candidates.
+         * By working modulo 60, we can efficiently identify which numbers
+         * are prime candidates.
          */
         let mut primes = BitVec::from_elem(n + 1, false);
 
         if n < 2
         {
-            return Primes { primes };
+            return Self { primes };
         }
 
         // Set 2, 3, and 5 as prime manually.
@@ -104,7 +106,7 @@ impl Primes
 
         if n < 5
         {
-            return Primes { primes };
+            return Self { primes };
         }
         primes.set(5, true);
 
@@ -167,7 +169,8 @@ impl Primes
             if primes[i]
             {
                 // Mark all multiples of i as composite
-                // Start from i*i since smaller multiples would have been marked already
+                // Start from i*i since smaller multiples would have been marked
+                // already
                 let mut multiple = i * i;
                 while multiple <= n
                 {
@@ -177,7 +180,7 @@ impl Primes
             }
         }
 
-        Primes { primes }
+        Self { primes }
     }
 
     /// Check if a number is prime.
@@ -254,7 +257,7 @@ impl Primes
     /// assert_eq!(primes_vec, vec![2, 3, 5, 7, 11, 13, 17, 19]);
     /// ```
     #[must_use]
-    pub fn iter(&self) -> PrimesIterator
+    pub const fn iter(&'_ self) -> PrimesIterator<'_>
     {
         PrimesIterator {
             primes: &self.primes,
@@ -301,15 +304,18 @@ mod tests
 
     // Primes up to 1000
     static SMALL_PRIMES: &[u32] = &[
-        2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89,
-        97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181,
-        191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281,
-        283, 293, 307, 311, 313, 317, 331, 337, 347, 349, 353, 359, 367, 373, 379, 383, 389, 397,
-        401, 409, 419, 421, 431, 433, 439, 443, 449, 457, 461, 463, 467, 479, 487, 491, 499, 503,
-        509, 521, 523, 541, 547, 557, 563, 569, 571, 577, 587, 593, 599, 601, 607, 613, 617, 619,
-        631, 641, 643, 647, 653, 659, 661, 673, 677, 683, 691, 701, 709, 719, 727, 733, 739, 743,
-        751, 757, 761, 769, 773, 787, 797, 809, 811, 821, 823, 827, 829, 839, 853, 857, 859, 863,
-        877, 881, 883, 887, 907, 911, 919, 929, 937, 941, 947, 953, 967, 971, 977, 983, 991, 997,
+        2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67,
+        71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139,
+        149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223,
+        227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293,
+        307, 311, 313, 317, 331, 337, 347, 349, 353, 359, 367, 373, 379, 383,
+        389, 397, 401, 409, 419, 421, 431, 433, 439, 443, 449, 457, 461, 463,
+        467, 479, 487, 491, 499, 503, 509, 521, 523, 541, 547, 557, 563, 569,
+        571, 577, 587, 593, 599, 601, 607, 613, 617, 619, 631, 641, 643, 647,
+        653, 659, 661, 673, 677, 683, 691, 701, 709, 719, 727, 733, 739, 743,
+        751, 757, 761, 769, 773, 787, 797, 809, 811, 821, 823, 827, 829, 839,
+        853, 857, 859, 863, 877, 881, 883, 887, 907, 911, 919, 929, 937, 941,
+        947, 953, 967, 971, 977, 983, 991, 997,
     ];
 
     #[test]
@@ -346,8 +352,8 @@ mod tests
         // Test direct iteration
         let collected: Vec<_> = primes.iter().collect();
         let expected: Vec<_> = vec![
-            2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83,
-            89, 97,
+            2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61,
+            67, 71, 73, 79, 83, 89, 97,
         ];
         assert_eq!(collected, expected);
 

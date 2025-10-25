@@ -6,9 +6,10 @@
 //!
 //! * `gcd` - Calculate the greatest common divisor of two numbers.
 //! * `lcm` - Calculate the least common multiple of two numbers.
-use num_traits::PrimInt;
 use std::mem::swap;
 use std::ops::RemAssign;
+
+use num_traits::PrimInt;
 
 pub mod factors;
 pub mod primes;
@@ -113,7 +114,7 @@ mod tests
         assert_eq!(gcd(48, 18), 6);
         assert_eq!(gcd(54, 24), 6);
         assert_eq!(gcd(7, 13), 1);
-        assert_eq!(gcd(28851538, 1183019), 17657);
+        assert_eq!(gcd(28_851_538, 1_183_019), 17657);
     }
 
     #[test]

@@ -8,9 +8,10 @@
 //! * `is_prime` - Check if a number is prime using the Miller-Rabin primality
 //!   test.
 //! * `trial_division` - Check if a number is prime using trial division.
-use crate::utils::sieve::Primes;
 use rug::rand::RandState;
 use rug::{Complete, Integer};
+
+use crate::utils::sieve::Primes;
 
 /// Determine the number of iterations `k` based on the magnitude of `num`.
 ///
@@ -124,7 +125,7 @@ pub fn is_prime(num: &Integer) -> bool
         Some(n) if n <= 1 => return false,
         Some(n) if n <= 3 => return true,
         _ =>
-        {}
+        {},
     }
 
     if num.is_even()
@@ -234,18 +235,20 @@ pub fn trial_division(num: u64) -> bool
         return false;
     }
 
-    if num % 2 == 0
+    if num.is_multiple_of(2)
     {
         return num == 2;
     }
 
-    // Any number greater than 1 is divided by a prime number less than its square
-    // root.
-    for i in Primes::new(usize::try_from(num.isqrt()).expect("Failed to convert u64 to usize"))
-        .iter()
-        .map(|x| x as u64)
+    // Any number greater than 1 is divided by a prime number less than its
+    // square root.
+    for i in Primes::new(
+        usize::try_from(num.isqrt()).expect("Failed to convert u64 to usize"),
+    )
+    .iter()
+    .map(|x| x as u64)
     {
-        if num % i == 0
+        if num.is_multiple_of(i)
         {
             return false;
         }
@@ -257,20 +260,24 @@ pub fn trial_division(num: u64) -> bool
 #[cfg(test)]
 mod tests
 {
-    use super::*;
     use std::sync::LazyLock;
+
+    use super::*;
 
     // Primes up to 1000
     static SMALL_PRIMES: &[u32] = &[
-        2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89,
-        97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181,
-        191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281,
-        283, 293, 307, 311, 313, 317, 331, 337, 347, 349, 353, 359, 367, 373, 379, 383, 389, 397,
-        401, 409, 419, 421, 431, 433, 439, 443, 449, 457, 461, 463, 467, 479, 487, 491, 499, 503,
-        509, 521, 523, 541, 547, 557, 563, 569, 571, 577, 587, 593, 599, 601, 607, 613, 617, 619,
-        631, 641, 643, 647, 653, 659, 661, 673, 677, 683, 691, 701, 709, 719, 727, 733, 739, 743,
-        751, 757, 761, 769, 773, 787, 797, 809, 811, 821, 823, 827, 829, 839, 853, 857, 859, 863,
-        877, 881, 883, 887, 907, 911, 919, 929, 937, 941, 947, 953, 967, 971, 977, 983, 991, 997,
+        2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67,
+        71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139,
+        149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223,
+        227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293,
+        307, 311, 313, 317, 331, 337, 347, 349, 353, 359, 367, 373, 379, 383,
+        389, 397, 401, 409, 419, 421, 431, 433, 439, 443, 449, 457, 461, 463,
+        467, 479, 487, 491, 499, 503, 509, 521, 523, 541, 547, 557, 563, 569,
+        571, 577, 587, 593, 599, 601, 607, 613, 617, 619, 631, 641, 643, 647,
+        653, 659, 661, 673, 677, 683, 691, 701, 709, 719, 727, 733, 739, 743,
+        751, 757, 761, 769, 773, 787, 797, 809, 811, 821, 823, 827, 829, 839,
+        853, 857, 859, 863, 877, 881, 883, 887, 907, 911, 919, 929, 937, 941,
+        947, 953, 967, 971, 977, 983, 991, 997,
     ];
 
     // Large prime number for testing
@@ -330,7 +337,7 @@ mod tests
                 .iter()
                 .take(100)
                 .copied()
-                .all(|x| trial_division(x as u64))
+                .all(|x| trial_division(u64::from(x)))
         );
     }
 }
