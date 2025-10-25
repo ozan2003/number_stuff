@@ -196,7 +196,7 @@ pub fn pollards_rho(num: &Integer) -> BTreeMap<Integer, u32>
     }
 
     // Early check for small primes.
-    if num.is_probably_prime(50) != IsPrime::No
+    if num.is_probably_prime(5) != IsPrime::No
     {
         factors
             .entry(num)
