@@ -59,12 +59,12 @@ impl Primes
     /// use number_stuff::utils::sieve::Primes;
     ///
     /// let primes = Primes::new(100);
-    /// assert!(primes.is_prime(2));
-    /// assert!(primes.is_prime(3));
-    /// assert!(primes.is_prime(5));
-    /// assert!(primes.is_prime(97));
-    /// assert!(!primes.is_prime(4));
-    /// assert!(!primes.is_prime(100));
+    /// assert_eq!(primes.is_prime(2), Some(true));
+    /// assert_eq!(primes.is_prime(3), Some(true));
+    /// assert_eq!(primes.is_prime(5), Some(true));
+    /// assert_eq!(primes.is_prime(97), Some(true));
+    /// assert_eq!(primes.is_prime(4), Some(false));
+    /// assert_eq!(primes.is_prime(100), Some(false));
     /// ```
     #[must_use]
     pub fn new(n: usize) -> Self
@@ -203,10 +203,10 @@ impl Primes
     /// use number_stuff::utils::sieve::Primes;
     ///
     /// let primes = Primes::new(100);
-    /// assert!(primes.is_prime(7));
-    /// assert!(!primes.is_prime(6));
+    /// assert_eq!(primes.is_prime(7), Some(true));
+    /// assert_eq!(primes.is_prime(6), Some(false));
     /// // Larger than sieve range
-    /// assert!(!primes.is_prime(101));
+    /// assert_eq!(primes.is_prime(101), None);
     /// ```
     #[must_use]
     pub fn is_prime(&self, num: usize) -> Option<bool>

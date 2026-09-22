@@ -34,6 +34,8 @@ use crate::utils::sieve::Primes;
 /// # Examples
 ///
 /// ```
+/// use number_stuff::utils::factors::trial_division;
+///
 /// let f = trial_division(12);
 /// assert_eq!(f.get(&2), Some(&2)); // 12 = 2^2 * 3^1
 /// assert_eq!(f.get(&3), Some(&1));
@@ -116,7 +118,12 @@ pub fn trial_division(mut n: i64) -> BTreeMap<i64, u32>
 /// assert_eq!(trailing_zeros(&Integer::from(12)), 2); // 12 = 1100₂, has 2 trailing zeros
 /// assert_eq!(trailing_zeros(&Integer::from(0)), 0);  // Special case
 /// ```
-fn trailing_zeros(num: &Integer) -> u32
+/// # Panics
+///
+/// Panics if the number of trailing zeros exceeds `u32::MAX`, which is
+/// unreachable for any integer that fits in memory.
+#[must_use]
+pub fn trailing_zeros(num: &Integer) -> u32
 {
     if *num == 0
     {
@@ -169,7 +176,11 @@ fn trailing_zeros(num: &Integer) -> u32
 ///
 /// # Warning
 /// Since the algorithm is probabilistic, it may not always find all factors
-/// for very large or specially constructed numbers.
+/// for very large or specially constructed numbers. When the algorithm
+/// exhausts its attempts without finding a factor, the remaining composite
+/// value is reported as a single factor; callers can detect this by checking
+/// whether the returned factors are actually prime (for example with
+/// `is_prime`).
 #[expect(
     clippy::missing_panics_doc,
     reason = "panics are guarded internal conversions that cannot fail for \
@@ -293,7 +304,9 @@ pub fn pollards_rho(num: &Integer) -> BTreeMap<Integer, u32>
         }
     }
 
-    // If we get here, consider it prime (or give up).
+    // If we get here, the algorithm gave up and cannot split the remaining
+    // value; report it as a single (possibly composite) factor so callers
+    // can detect the failure by checking the factors.
     factors
         .entry(num)
         .and_modify(|v| *v += 1)
@@ -315,6 +328,8 @@ pub fn pollards_rho(num: &Integer) -> BTreeMap<Integer, u32>
 ///
 /// # Examples
 /// ```
+/// use number_stuff::utils::factors::divisor_num;
+///
 /// assert_eq!(divisor_num(12), 6); // 1, 2, 3, 4, 6, 12
 /// ```
 #[must_use]
@@ -344,6 +359,8 @@ pub fn divisor_num(n: i64) -> u32
 /// # Examples
 ///
 /// ```
+/// use number_stuff::utils::factors::totient;
+///
 /// assert_eq!(totient(12), 4); // 1, 5, 7, 11 are coprime to 12
 /// ```
 ///
@@ -475,15 +492,14 @@ mod tests
     }
 
     #[test]
-    #[should_panic = "Pollard's rho algorithm is probabilistic and may fail on \
-                      certain inputs."]
-    fn test_pollards_rho_not_working()
+    fn test_pollards_rho_gives_up()
     {
+        // With only 3 attempts x 100 Floyd iterations, this 90-bit number's
+        // smallest factor (~1.8e6, needing ~sqrt(p) iterations) is out of
+        // reach, so the algorithm gives up and reports the remaining value.
         let big_number =
             Integer::from(10_000_000_000_006_800_000_000_001_147_u128);
         let f = pollards_rho(&big_number);
-        assert_eq!(f.get(&Integer::from(1_858_741)), Some(&1));
-        assert_eq!(f.get(&Integer::from(53_799_857)), Some(&1));
-        assert_eq!(f.get(&Integer::from(100_000_000_000_031_u64)), Some(&1));
+        assert_eq!(f.get(&big_number), Some(&1));
     }
 }

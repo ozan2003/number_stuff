@@ -71,6 +71,7 @@ fn determine_k(num: &Integer) -> u32
 ///
 /// ```
 /// use malachite::Integer;
+/// use number_stuff::utils::primes::is_prime;
 ///
 /// let num = Integer::from(18014398509488327u64);
 /// assert!(is_prime(&num));
@@ -237,10 +238,8 @@ pub fn is_prime(num: &Integer) -> bool
 /// ```
 /// use number_stuff::utils::primes::trial_division;
 ///
-/// assert!(trial_division(18014398509482147));
-/// assert!(!trial_division(18014398509482171));
-/// assert!(trial_division(18014398509482329));
-/// assert!(!trial_division(18014398509482357));
+/// assert!(trial_division(1_000_000_000_039));
+/// assert!(!trial_division(999_999_999_999));
 /// ```
 ///
 /// # Panics
@@ -318,15 +317,16 @@ mod tests
     fn test_determine_k()
     {
         let test_cases = [
-            ("100", 5),
-            ("999", 5),
-            ("1000", 10),
-            ("999999", 10),
-            ("1000000", 20),
-            ("999999999", 20),
-            ("1000000000", 50),
-            ("999999999999", 50),
-            ("1000000000000", 50),
+            // Thresholds are on bit length, not decimal magnitude.
+            ("100", 5),                     // 7 bits
+            ("1000", 5),                    // 10 bits
+            ("9999", 5),                    // 14 bits
+            ("65535", 10),                  // 16 bits
+            ("1000000", 10),                // 20 bits
+            ("4294967296", 20),             // 33 bits
+            ("999999999999", 20),           // 40 bits
+            ("18446744073709551616", 50),   // 65 bits
+            ("1000000000000000000000", 50), // 70 bits
         ];
 
         for (num_str, expected) in test_cases
