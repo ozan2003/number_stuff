@@ -8,8 +8,9 @@
 //! * `is_prime` - Check if a number is prime using the Miller-Rabin primality
 //!   test.
 //! * `trial_division` - Check if a number is prime using trial division.
-use rug::rand::RandState;
-use rug::{Complete, Integer};
+use malachite::base::num::arithmetic::traits::{ModPow as _, Parity as _};
+use malachite::base::num::logic::traits::SignificantBits as _;
+use malachite::{Integer, Natural};
 
 use crate::utils::sieve::Primes;
 
@@ -69,16 +70,19 @@ fn determine_k(num: &Integer) -> u32
 /// # Examples
 ///
 /// ```
-/// use rug::Integer;
+/// use malachite::Integer;
 ///
-/// let num = Integer::from(18014398509488327);
+/// let num = Integer::from(18014398509488327u64);
 /// assert!(is_prime(&num));
 /// ```
 ///
 /// # Panics
 ///
 /// Panics if the `pow_mod` operation fails.
-#[allow(clippy::many_single_char_names)]
+#[expect(
+    clippy::many_single_char_names,
+    reason = "single-char names mirror the standard Miller-Rabin notation"
+)]
 #[must_use]
 pub fn is_prime(num: &Integer) -> bool
 {
@@ -119,51 +123,68 @@ pub fn is_prime(num: &Integer) -> bool
      * If n is composite, at least 75% of bases a will reveal n is composite.
      * Thus, after k iterations, the probability of `n` being prime is 1/4^k.
      */
-    // Early returns for small numbers
-    match num.to_i32()
+    // Early returns for small numbers and negatives.
+    if *num < 2
     {
-        Some(n) if n <= 1 => return false,
-        Some(n) if n <= 3 => return true,
-        _ =>
-        {},
+        return false;
+    }
+    if *num == 2 || *num == 3
+    {
+        return true;
     }
 
-    if num.is_even()
+    if num.even()
     {
         return false;
     }
 
     // Determine k based on magnitude of n.
-    let k = self::determine_k(num);
+    let k = determine_k(num);
+
+    // Work with the magnitude from here on; `num` is odd and at least 5.
+    let n = Natural::try_from(num).expect("`num` is positive");
+    let one = Natural::from(1u64);
+    let two = Natural::from(2u64);
+    let n_minus_one = &n - &one;
 
     // Step 1: Decompose n-1 into d * 2^s.
     let (s, d) = {
         let mut s: i32 = 0;
-        let mut d: Integer = (num - Integer::ONE).complete();
+        let mut d = n_minus_one.clone();
 
-        while d.is_even()
+        while d.even()
         {
-            d >>= 1;
+            d >>= 1u64;
             s += 1;
         }
         (s, d)
     };
 
     // Step 2: Search for a witness.
-    let mut rng = RandState::new();
+    let mut rng = urandom::new();
+    // Candidate bases live in [2, n - 2]; reduce random bits modulo n - 3.
+    let span = &n_minus_one - &two;
+    let words = num.significant_bits().div_ceil(64);
     // Step 3: Repeat k times.
     for _ in 0..k
     {
-        // Randomly chosen base a, 2 <= a <= n-2 -> 0 <= a - 2 <= n-4
-        let a: Integer = (num - Integer::from(4)).random_below(&mut rng) + 2;
+        // Randomly chosen base a, 2 <= a <= n-2
+        let a: Natural = {
+            // Generate enough random bits to cover the range, then reduce
+            // modulo `span` to land in [2, n - 2].
+            let mut raw = Natural::from(0u64);
+            for _ in 0..words
+            {
+                raw <<= 64u64;
+                raw += Natural::from(rng.next::<u64>());
+            }
+            raw % &span + &two
+        };
 
         // Compute x = a^d % n.
-        let mut x = a
-            .pow_mod_ref(&d, num)
-            .expect("Couldn't complete pow_mod operation.")
-            .complete();
+        let mut x = (&a).mod_pow(&d, &n);
 
-        if x == *Integer::ONE || x == (num - Integer::ONE).complete()
+        if x == one || x == n_minus_one
         {
             // `num` passes the test for this `a`.
             continue;
@@ -172,12 +193,11 @@ pub fn is_prime(num: &Integer) -> bool
         // Otherwise, square `x` repeatedly up to `s-1` times.
         for _ in 0..s - 1
         {
-            x.pow_mod_mut(&Integer::from(2), num)
-                .unwrap();
+            x = (&x).mod_pow(&two, &n);
 
             // Check is x === -1 (mod n).
-            // x == num - 1 is equivalent to x == -1 (mod n).
-            if x == (num - Integer::ONE).complete()
+            // x == n - 1 is equivalent to x == -1 (mod n).
+            if x == n_minus_one
             {
                 // If found, `num` passes the test for this `a`.
                 break;
@@ -185,7 +205,7 @@ pub fn is_prime(num: &Integer) -> bool
         }
 
         // If never found, `num` is composite.
-        if x != (num - Integer::ONE).complete()
+        if x != n_minus_one
         {
             return false;
         }
@@ -282,12 +302,16 @@ mod tests
 
     // Large prime number for testing
     static BIG_PRIME: LazyLock<Integer> = LazyLock::new(|| {
-        Integer::parse("800948954241637326367289644750448487839117926303848998020309\
+        "800948954241637326367289644750448487839117926303848998020309\
         1882856589695259576866912252471851775792381635152371769187095490468400064936928273574383567528 \
         121072690778050973811430761398678258395995371555894454671120879811384840595312486689823936748878302 \
         83487720338800489565021330252166958070609444129096599915927491089204574668996261366285398022946178 \
         5588155810915576292016665079696314903061261426009609240670414640717372982383625995755248125698223 \
-        1856327486667940207811726091388832774553459734155793").unwrap().complete()
+        1856327486667940207811726091388832774553459734155793"
+            .split_whitespace()
+            .collect::<String>()
+            .parse()
+            .expect("Couldn't parse big prime")
     });
 
     #[test]
@@ -308,7 +332,11 @@ mod tests
         for (num_str, expected) in test_cases
         {
             assert_eq!(
-                determine_k(&Integer::parse(num_str).unwrap().complete()),
+                determine_k(
+                    &num_str
+                        .parse::<Integer>()
+                        .expect("Couldn't parse test number")
+                ),
                 expected
             );
         }

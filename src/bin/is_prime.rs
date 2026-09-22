@@ -1,20 +1,25 @@
+//! CLI to check primality of a number using Miller-Rabin.
 use std::env::args;
 use std::process::exit;
 use std::time::Instant;
 
+use malachite::Integer;
 use number_stuff::utils::primes::is_prime;
-use rug::Integer;
 
 fn main()
 {
     let args: Vec<String> = args().collect();
-    if args.len() < 2
+    let Some(input) = args.get(1)
+    else
     {
-        eprintln!("Usage: {} <number>", args[0]);
+        let program = args
+            .first()
+            .map_or("program", String::as_str);
+        eprintln!("Usage: {program} <number>");
         exit(1);
-    }
+    };
 
-    let num: Integer = args[1]
+    let num: Integer = input
         .parse()
         .expect("Couldn't parse number.");
 
@@ -31,5 +36,5 @@ fn main()
         println!("{num} is not prime");
     }
 
-    println!("Took: {elapsed:?}");
+    println!("Took: {:.6}s", elapsed.as_secs_f64());
 }

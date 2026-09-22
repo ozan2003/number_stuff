@@ -10,11 +10,16 @@
 //! * `totient` - Calculate Euler's totient function.
 use std::collections::BTreeMap;
 
-use rug::integer::IsPrime;
-use rug::ops::Pow;
-use rug::rand::RandState;
-use rug::{Complete, Integer};
+use malachite::base::num::arithmetic::traits::{
+    Abs as _,
+    Gcd as _,
+    Parity as _,
+    Pow as _,
+};
+use malachite::base::num::logic::traits::SignificantBits as _;
+use malachite::{Integer, Natural};
 
+use crate::utils::primes::is_prime;
 use crate::utils::sieve::Primes;
 
 /// Computes the prime factorization of a number.
@@ -38,8 +43,11 @@ use crate::utils::sieve::Primes;
 ///
 /// * Returns {0: 1} for input 0
 /// * Returns {1: 1} for input 1
-#[allow(clippy::missing_panics_doc)]
-#[allow(clippy::cast_possible_truncation)]
+#[expect(
+    clippy::missing_panics_doc,
+    reason = "panics are guarded internal conversions that cannot fail for \
+              valid inputs"
+)]
 #[must_use]
 pub fn trial_division(mut n: i64) -> BTreeMap<i64, u32>
 {
@@ -102,7 +110,7 @@ pub fn trial_division(mut n: i64) -> BTreeMap<i64, u32>
 ///
 /// ```
 /// use number_stuff::utils::factors::trailing_zeros;
-/// use rug::Integer;
+/// use malachite::Integer;
 ///
 /// assert_eq!(trailing_zeros(&Integer::from(8)), 3);  // 8 = 1000₂, has 3 trailing zeros
 /// assert_eq!(trailing_zeros(&Integer::from(12)), 2); // 12 = 1100₂, has 2 trailing zeros
@@ -110,13 +118,17 @@ pub fn trial_division(mut n: i64) -> BTreeMap<i64, u32>
 /// ```
 fn trailing_zeros(num: &Integer) -> u32
 {
-    if num.is_zero()
+    if *num == 0
     {
         return 0; // Special case for zero.
     }
 
-    // Use num.find_one(0) to find position of lowest set bit.
-    num.find_one(0).unwrap_or(0)
+    // Find the position of the lowest set bit.
+    u32::try_from(
+        num.trailing_zeros()
+            .expect("Nonzero integer has trailing zeros"),
+    )
+    .expect("Trailing zeros fit in u32")
 }
 
 /// Find the prime factors of a number using Pollard's rho algorithm
@@ -142,7 +154,7 @@ fn trailing_zeros(num: &Integer) -> u32
 ///
 /// ```
 /// use number_stuff::utils::factors::pollards_rho;
-/// use rug::Integer;
+/// use malachite::Integer;
 /// use std::collections::BTreeMap;
 ///
 /// // Factorize 12 = 2^2 * 3^1
@@ -158,7 +170,12 @@ fn trailing_zeros(num: &Integer) -> u32
 /// # Warning
 /// Since the algorithm is probabilistic, it may not always find all factors
 /// for very large or specially constructed numbers.
-#[allow(clippy::many_single_char_names)]
+#[expect(
+    clippy::missing_panics_doc,
+    reason = "panics are guarded internal conversions that cannot fail for \
+              valid inputs"
+)]
+#[expect(clippy::many_single_char_names, reason = "its all math stuff")]
 #[must_use]
 pub fn pollards_rho(num: &Integer) -> BTreeMap<Integer, u32>
 {
@@ -172,14 +189,14 @@ pub fn pollards_rho(num: &Integer) -> BTreeMap<Integer, u32>
         return factors;
     }
 
-    if num.is_negative()
+    if num < 0
     {
-        factors.insert(Integer::NEG_ONE.clone(), 1);
-        num.abs_mut();
+        factors.insert(Integer::from(-1), 1);
+        num = -num;
     }
 
     // Add the counts of 2 if n is even.
-    if num.is_even()
+    if num.even()
     {
         let zeros = trailing_zeros(&num);
         factors
@@ -187,7 +204,7 @@ pub fn pollards_rho(num: &Integer) -> BTreeMap<Integer, u32>
             .and_modify(|v| *v += zeros)
             .or_insert(zeros);
 
-        num >>= zeros; // n /= 2^k
+        num >>= u64::from(zeros); // n /= 2^k
 
         if num == 1
         {
@@ -196,7 +213,7 @@ pub fn pollards_rho(num: &Integer) -> BTreeMap<Integer, u32>
     }
 
     // Early check for small primes.
-    if num.is_probably_prime(5) != IsPrime::No
+    if is_prime(&num)
     {
         factors
             .entry(num)
@@ -205,7 +222,9 @@ pub fn pollards_rho(num: &Integer) -> BTreeMap<Integer, u32>
         return factors;
     }
 
-    let mut rng = RandState::new();
+    let mut rng = urandom::new();
+    // `num` is now odd, composite and at least 9; keep a Natural view for gcd.
+    let num_nat = Natural::try_from(&num).expect("`num` is positive");
     let max_attempts = 3;
 
     for attempt in 1..=max_attempts
@@ -213,7 +232,7 @@ pub fn pollards_rho(num: &Integer) -> BTreeMap<Integer, u32>
         // Vary the polynomial function with each attempt.
         let c = Integer::from(attempt);
         // f(z) = z^2 + c mod n.
-        let f = |z: &Integer| (z.pow(2).complete() + &c) % &num;
+        let f = |z: &Integer| (z.pow(2u64) + &c) % &num;
 
         // Select an x_0 uniformly at random from [2, n - 1] -> [0, n - 3].
         //
@@ -221,31 +240,37 @@ pub fn pollards_rho(num: &Integer) -> BTreeMap<Integer, u32>
         // x => x_i
         // y => x_i+1
         let mut x: Integer = {
-            let mut x = Integer::from(&num - 3).abs();
-            if x.is_zero()
+            // Generate enough random bits to cover the range, then reduce
+            // modulo `num - 3` to land in [2, n - 1).
+            let mut raw = Integer::from(0u64);
+            for _ in 0..num.significant_bits().div_ceil(64)
             {
-                x += 1;
+                raw <<= 64u64;
+                raw += Integer::from(rng.next::<u64>());
             }
-            x.random_below_mut(&mut rng);
-            x + 2
+            raw % (&num - &Integer::from(3)) + &Integer::from(2)
         };
         let mut y = x.clone();
-        let mut d = Integer::ONE.clone();
+        let mut d = Integer::from(1);
 
         // Floyd's cycle finding with optimizations.
         let mut iterations = 0;
 
-        while d == *Integer::ONE && iterations < MAX_ITERATIONS
+        while d == 1 && iterations < MAX_ITERATIONS
         {
             x = f(&x);
             y = f(&f(&y));
 
-            let diff = (&x - &y).complete().abs();
-            d = diff.gcd(&num); // gcd being 1 indicates |x - y| and n are coprime.
+            // gcd being 1 indicates |x - y| and n are coprime.
+            let diff = (&x - &y).abs();
+            d = Integer::from(
+                (&Natural::try_from(&diff).expect("`diff` is nonnegative"))
+                    .gcd(&num_nat),
+            );
             iterations += 1;
         }
 
-        if d != *Integer::ONE && d != num
+        if d != 1 && d != num
         {
             // Found a proper factor, look for others.
             // If d = n, we haven't actually factorized anything useful
@@ -446,7 +471,7 @@ mod tests
 
         let big_prime = Integer::from(18_446_744_073_709_551_557_u64);
         let f = pollards_rho(&big_prime);
-        assert!(f.len() == 1);
+        assert_eq!(f.len(), 1);
     }
 
     #[test]

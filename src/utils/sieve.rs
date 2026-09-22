@@ -11,15 +11,16 @@ use bit_vec::BitVec;
 /// A prime sieve.
 pub struct Primes
 {
+    /// Bitset where entry `i` marks whether `i` is prime.
     primes: BitVec,
 }
 
-/// An iterator over prime numbers in a Primes sieve
+/// An iterator over prime numbers in a Primes sieve.
 ///
 /// # Examples
 ///
 /// ```
-/// use crate::utils::sieve::Primes;
+/// use number_stuff::utils::sieve::Primes;
 ///
 /// let primes = Primes::new(100);
 ///
@@ -34,7 +35,9 @@ pub struct Primes
 /// ```
 pub struct PrimesIterator<'a>
 {
+    /// Reference to the sieve being iterated over.
     primes: &'a BitVec,
+    /// Next candidate index to check.
     current_index: usize,
 }
 
@@ -48,7 +51,7 @@ impl Primes
     ///
     /// # Returns
     ///
-    /// A `Primes` struct containing a sieve with all primes up to `n`
+    /// A `Primes` struct containing a sieve with all primes up to `n`.
     ///
     /// # Examples
     ///
@@ -131,7 +134,7 @@ impl Primes
                         r == 49 ||
                         r == 53
                     {
-                        primes.set(n1, !primes[n1]);
+                        primes.set(n1, !primes.get(n1).unwrap_or(false));
                     }
                 }
 
@@ -142,7 +145,7 @@ impl Primes
                     let r = n2 % 60;
                     if r == 7 || r == 19 || r == 31 || r == 43
                     {
-                        primes.set(n2, !primes[n2]);
+                        primes.set(n2, !primes.get(n2).unwrap_or(false));
                     }
                 }
 
@@ -155,7 +158,7 @@ impl Primes
                         let r = n3 % 60;
                         if r == 11 || r == 23 || r == 47 || r == 59
                         {
-                            primes.set(n3, !primes[n3]);
+                            primes.set(n3, !primes.get(n3).unwrap_or(false));
                         }
                     }
                 }
@@ -166,7 +169,7 @@ impl Primes
         for i in 5..=sqrt_n
         {
             // If i is marked as a prime candidate
-            if primes[i]
+            if primes.get(i).unwrap_or(false)
             {
                 // Mark all multiples of i as composite
                 // Start from i*i since smaller multiples would have been marked
@@ -240,7 +243,7 @@ impl Primes
         self.iter().nth(n)
     }
 
-    /// Returns an iterator over all prime numbers in the sieve
+    /// Returns an iterator over all prime numbers in the sieve.
     ///
     /// # Returns
     ///
@@ -288,8 +291,8 @@ impl Iterator for PrimesIterator<'_>
 
 impl<'a> IntoIterator for &'a Primes
 {
-    type Item = usize;
     type IntoIter = PrimesIterator<'a>;
+    type Item = usize;
 
     fn into_iter(self) -> Self::IntoIter
     {
